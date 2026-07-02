@@ -1729,22 +1729,6 @@ body.offline-mode .offline-banner{display:block;}
           <button class="btn acc" onclick="explorerSearch()" style="flex-shrink:0;padding:10px 16px;border-radius:var(--rs);">Chercher</button>
         </div>
 
-        <!-- Filtre cuisine -->
-        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
-          <select id="explorerCuisine" class="inp" style="flex:0 0 auto;padding:8px 10px;font-size:.78rem;border-radius:var(--rs);" onchange="explorerSearch()">
-            <option value="">🌍 Toutes cuisines</option>
-            <option value="française">🇫🇷 Française</option>
-            <option value="italienne">🇮🇹 Italienne</option>
-            <option value="asiatique">🥢 Asiatique</option>
-            <option value="japonaise">🇯🇵 Japonaise</option>
-            <option value="mexicaine">🌮 Mexicaine</option>
-            <option value="indienne">🍛 Indienne</option>
-            <option value="américaine">🇺🇸 Américaine</option>
-            <option value="méditerranéenne">🫒 Méditerranéenne</option>
-            <option value="thaïlandaise">🇹🇭 Thaïlandaise</option>
-          </select>
-        </div>
-
         <!-- Quick tags -->
         <div id="explorerTags" style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;">
           <button class="spoon-recipe-tag" onclick="explorerSearchQuery('pâtes carbonara')">🍝 Pâtes</button>
@@ -2197,17 +2181,31 @@ function loadState() {
 // ═══════════════════════════════════════════════
 // FIRESTORE SYNC
 // ═══════════════════════════════════════════════
-async function syncToFirestore(key, value) {
-  if(!db || !currentUser) return;
-  try {
-    const docId = state.houseId || currentUser.uid;
-    await _writeFieldReplacing(db.collection('households').doc(docId), key, value);
-    // Always mirror personal data to users/{uid} so it survives logout/login without a household
-    const personalKeys = ['weekMenu', 'history', 'fridge', 'items', 'budget'];
-    if(personalKeys.includes(key)) {
-      await _writeFieldReplacing(db.collection('users').doc(currentUser.uid), key, value);
-    }
-  } catch(e) { console.warn('Sync error:', e); }
+const _syncTimers = {};
+function syncToFirestore(key, value) {
+  // Poser le flag de protection IMMÉDIATEMENT (avant même l'écriture réseau)
+  // pour bloquer les onSnapshot qui recevraient encore l'ancienne valeur
+  if(!window._localWriteTs) window._localWriteTs = {};
+  window._localWriteTs[key] = Date.now();
+
+  if(_syncTimers[key]) clearTimeout(_syncTimers[key]);
+  _syncTimers[key] = setTimeout(async () => {
+    delete _syncTimers[key];
+    if(!db || !currentUser) return;
+    try {
+      const docId = state.houseId || currentUser.uid;
+      await _writeFieldReplacing(db.collection('households').doc(docId), key, value);
+      const personalKeys = ['weekMenu', 'history', 'fridge', 'items', 'budget'];
+      if(personalKeys.includes(key)) {
+        await _writeFieldReplacing(db.collection('users').doc(currentUser.uid), key, value);
+      }
+      // Rafraîchir le timestamp après l'écriture réussie (garde la protection
+      // active encore 2s le temps que le onSnapshot local se déclenche avec
+      // la BONNE valeur, sans quoi une valeur intermédiaire pourrait passer)
+      window._localWriteTs[key] = Date.now();
+    } catch(e) { console.warn('Sync error:', e.code || e.message); }
+  }, 600);
+  return Promise.resolve();
 }
 
 // Écrit un champ en le REMPLAÇANT entièrement (pas de fusion récursive).
@@ -2262,16 +2260,23 @@ function subscribeToHousehold() {
   if(_userUnsub) { _userUnsub(); _userUnsub = null; }
   if(!db || !currentUser) return;
 
+  // Protection : ignorer les snapshots Firestore pendant 2s après une écriture locale
+  // (sinon la valeur ancienne de Firestore écrase la suppression locale)
+  const shouldIgnoreSnap = (key) => {
+    const ts = window._localWriteTs?.[key];
+    return ts && (Date.now() - ts < 2000);
+  };
+
   // Always listen to users/{uid} for personal data (weekMenu, fridge, items, history)
   _userUnsub = db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
     if(!doc.exists) return;
     const d = doc.data();
     let changed = false;
-    if(d.items    !== undefined && JSON.stringify(d.items)    !== JSON.stringify(state.items))    { state.items    = d.items;    changed = true; }
-    if(d.fridge   !== undefined && JSON.stringify(d.fridge)   !== JSON.stringify(state.fridge))   { state.fridge   = d.fridge;   changed = true; }
-    if(d.history  !== undefined && JSON.stringify(d.history)  !== JSON.stringify(state.history))  { state.history  = d.history;  changed = true; }
-    if(d.weekMenu !== undefined && JSON.stringify(d.weekMenu) !== JSON.stringify(state.weekMenu)) { state.weekMenu = d.weekMenu; changed = true; }
-    if(d.budget   !== undefined && d.budget !== state.budget) { state.budget = d.budget; changed = true; }
+    if(d.items    !== undefined && !shouldIgnoreSnap('items')    && JSON.stringify(d.items)    !== JSON.stringify(state.items))    { state.items    = d.items;    changed = true; }
+    if(d.fridge   !== undefined && !shouldIgnoreSnap('fridge')   && JSON.stringify(d.fridge)   !== JSON.stringify(state.fridge))   { state.fridge   = d.fridge;   changed = true; }
+    if(d.history  !== undefined && !shouldIgnoreSnap('history')  && JSON.stringify(d.history)  !== JSON.stringify(state.history))  { state.history  = d.history;  changed = true; }
+    if(d.weekMenu !== undefined && !shouldIgnoreSnap('weekMenu') && JSON.stringify(d.weekMenu) !== JSON.stringify(state.weekMenu)) { state.weekMenu = d.weekMenu; changed = true; }
+    if(d.budget   !== undefined && !shouldIgnoreSnap('budget')   && d.budget !== state.budget) { state.budget = d.budget; changed = true; }
     if(changed) { saveState(); renderAll(); }
   }, err => console.warn('User snapshot err:', err));
 
@@ -2295,11 +2300,11 @@ function subscribeToHousehold() {
       if(!doc.exists) return;
       const d = doc.data();
       let changed = false;
-      if(d.items    !== undefined && JSON.stringify(d.items)    !== JSON.stringify(state.items))    { state.items    = d.items;    changed = true; }
-      if(d.fridge   !== undefined && JSON.stringify(d.fridge)   !== JSON.stringify(state.fridge))   { state.fridge   = d.fridge;   changed = true; }
-      if(d.history  !== undefined && JSON.stringify(d.history)  !== JSON.stringify(state.history))  { state.history  = d.history;  changed = true; }
-      if(d.weekMenu !== undefined && JSON.stringify(d.weekMenu) !== JSON.stringify(state.weekMenu)) { state.weekMenu = d.weekMenu; changed = true; }
-      if(d.budget   !== undefined && d.budget !== state.budget) { state.budget = d.budget; changed = true; }
+      if(d.items    !== undefined && !shouldIgnoreSnap('items')    && JSON.stringify(d.items)    !== JSON.stringify(state.items))    { state.items    = d.items;    changed = true; }
+      if(d.fridge   !== undefined && !shouldIgnoreSnap('fridge')   && JSON.stringify(d.fridge)   !== JSON.stringify(state.fridge))   { state.fridge   = d.fridge;   changed = true; }
+      if(d.history  !== undefined && !shouldIgnoreSnap('history')  && JSON.stringify(d.history)  !== JSON.stringify(state.history))  { state.history  = d.history;  changed = true; }
+      if(d.weekMenu !== undefined && !shouldIgnoreSnap('weekMenu') && JSON.stringify(d.weekMenu) !== JSON.stringify(state.weekMenu)) { state.weekMenu = d.weekMenu; changed = true; }
+      if(d.budget   !== undefined && !shouldIgnoreSnap('budget')   && d.budget !== state.budget) { state.budget = d.budget; changed = true; }
       if(changed) { saveState(); renderAll(); }
     }, err => console.warn('Household snapshot err:', err));
   }
@@ -4466,9 +4471,9 @@ async function _queryRecipesForGeneration(settings, diet) {
 
   if(typeof db !== 'undefined' && db && typeof currentUser !== 'undefined' && currentUser) {
     try {
-      // Pas de .where('origin') côté Firestore — la casse/variations rendent
-      // la comparaison stricte peu fiable. On filtre côté client à la place.
-      const snap = await db.collection('recipes').limit(300).get();
+      let q = db.collection('recipes').limit(60);
+      if(settings.cuisine) q = q.where('origin', '==', settings.cuisine);
+      const snap = await q.get();
       const seen = new Set(pool.map(r => r.id));
       const extra = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
@@ -4482,21 +4487,8 @@ async function _queryRecipesForGeneration(settings, diet) {
 // Vérifie si une recette respecte les filtres cuisine + diète + allergènes
 function _recipeMatchesFilters(r, settings, diet) {
   if(!r || !r.id) return false;
-
-  // Exclure les desserts, collations, entrées — on veut uniquement déjeuner/dîner
-  const mealTypes = r.mealTypes || [];
-  if(mealTypes.length > 0) {
-    const hasLunchOrDinner = mealTypes.some(t => t === 'l' || t === 'd');
-    if(!hasLunchOrDinner) return false;
-  }
-  // Exclure par tag si "dessert" ou "collation" dans le nom/tags
-  const nameLow = (r.name || '').toLowerCase();
-  const tags = (r.tags || []).map(t => t.toLowerCase());
-  if(nameLow.includes('dessert') || nameLow.includes('gâteau') || nameLow.includes('tarte sucrée')
-     || tags.includes('dessert') || tags.includes('sweet')) return false;
-
   const eh = r.eatingHabits || {};
-  if(settings.cuisine && (!r.origin || !r.origin.toLowerCase().includes(settings.cuisine.toLowerCase()))) return false;
+  if(settings.cuisine && r.origin !== settings.cuisine) return false;
   if(diet === 'veg'    && !eh.vegetarian)  return false;
   if(diet === 'vegan'  && !eh.vegan)       return false;
   if(diet === 'pesc'   && !eh.pescatarian) return false;
@@ -4526,13 +4518,7 @@ async function generateAIMenuFull() {
   if(txt) txt.innerHTML = spinner + 'Recherche dans votre base\u2026';
 
   const p = state.profile || {};
-  // Lire le régime depuis le bouton actif dans le panneau menu
-  // state.selectedDiet[0] peut conserver un résidu d'une session précédente
-  const activeDietBtn = document.querySelector('[data-diet].on');
-  const diet = activeDietBtn?.dataset?.diet
-            || state.selectedDiet?.[0]
-            || p.diet
-            || 'omnivore';
+  const diet = state.selectedDiet[0] || p.diet || 'omnivore';
   const cals = calculateDailyCalories(p);
   const ldTarget = cals ? Math.round(cals * 0.65) : 0;
   const settings = _readMenuFilterSettings();
@@ -4566,20 +4552,18 @@ async function generateAIMenuFull() {
     const emptyDueToAllergen = [];
     pool = _applyMenuFilters(pool, settings, 'd\u00e9jeuner+d\u00eener', emptyDueToAllergen);
 
-    // Etape 4 : erreur claire si pool insuffisant
+    // Etape 4 : erreur claire si pool toujours insuffisant - AUCUN fallback random
     if(pool.length < MIN_POOL) {
       const what = [];
       if(settings.cuisine) what.push('cuisine ' + settings.cuisine);
-      // N'afficher le régime que s'il est vraiment différent d'omnivore
-      if(diet && diet !== 'omnivore') what.push('régime ' + diet);
+      if(diet !== 'omnivore') what.push('r\u00e9gime ' + diet);
       if(settings.maxTime) what.push('< ' + settings.maxTime + ' min');
-      if((settings.selectedAllergens||[]).length) what.push('sans ' + settings.selectedAllergens.join('/'));
+      if(settings.selectedAllergens.length) what.push('sans ' + settings.selectedAllergens.join('/'));
       const detail = what.length ? ' pour\u00a0: ' + what.join(', ') : '';
-      const need = MIN_POOL - pool.length;
-      const msg = pool.length === 0
-        ? 'Aucune recette trouvée' + detail + '.\nExplorez Jow dans l\'onglet Recettes pour en ajouter.'
-        : pool.length + ' recette(s) trouvée(s)' + detail + ', il en manque ' + need + '.\nExplorez Jow pour enrichir votre base ' + (settings.cuisine ? settings.cuisine : '') + '.';
-      showToast('⚠️', 'Recettes insuffisantes', msg);
+      showToast('\u26a0\ufe0f', 'Recettes insuffisantes',
+        pool.length === 0
+          ? 'Aucune recette trouv\u00e9e' + detail + '. \u00c9largissez vos filtres ou explorez Jow d\u2019abord.'
+          : pool.length + ' recette(s) trouv\u00e9e(s)' + detail + ', il en faut ' + MIN_POOL + '. \u00c9largissez vos filtres.');
       return;
     }
 
@@ -4807,11 +4791,9 @@ async function searchSpoonacularQuery(q) {
 // EXPLORER — fonctions unifiées
 // ─────────────────────────────────────────────────────
 function explorerSearch() {
-  const q       = (document.getElementById('spoonSearchInp')?.value || '').trim();
-  const cuisine = (document.getElementById('explorerCuisine')?.value || '').trim();
-  const combined = [cuisine, q].filter(Boolean).join(' ');
-  if(!combined) return;
-  searchJow(combined);
+  const q = (document.getElementById('spoonSearchInp').value||'').trim();
+  if(!q) return;
+  searchJow(q);
 }
 
 // Map of shortcut queries → better Jow search terms
@@ -5065,18 +5047,13 @@ function _renderJowResults(rawList, query) {
 
   if(!window._jowCache) window._jowCache = {};
 
-  // Normaliser toutes les recettes d'abord
-  const normalized = rawList.map(r => {
+  const cards = rawList.map(function(r) {
     const recipe = _jowNormalize(r);
+    // Mise en cache mémoire + localStorage
     window._jowCache[recipe.id] = recipe;
     _jowSaveRecipe(recipe);
-    return recipe;
-  });
+    saveToGlobalDB([recipe]).catch(function(){}); // sauvegarde dans la base partagee Firestore
 
-  // UN SEUL batch pour toute la recherche
-  saveToGlobalDB(normalized).catch(() => {});
-
-  const cards = normalized.map(function(recipe) {
     const habits  = recipe.eatingHabits || {};
     const nsBadge = _jowNSBadge(recipe.nutriScore);
     const gsBadge = _jowGSBadge(recipe.greenScore);
@@ -6511,65 +6488,67 @@ function openStripeCheckout(plan) {
 }
 
 
-// ══ BASE DE DONNÉES RECETTES ══════════════════════════════════════
-// Source de vérité = Firestore collection "recipes" (illimitée, partagée
-// entre tous les utilisateurs). _jowCache = cache mémoire de session.
-// localStorage N'EST PLUS UTILISÉ pour stocker les recettes (quota 5MB
-// trop limité — c'est ce qui plafonnait la base à ~250-300 recettes).
-
 function getGlobalRecipeDB() {
-  if(!window._jowCache) return [];
-  return Object.values(window._jowCache).filter(r => r && r.id && r.name);
+  try {
+    return JSON.parse(localStorage.getItem('sc_global_recipes') || '[]');
+  } catch(e) { return []; }
 }
 
 async function saveToGlobalDB(recipes) {
   if(!Array.isArray(recipes) || !recipes.length) return 0;
-
-  // 1. Cache mémoire immédiat (zéro latence, avec photos)
-  if(!window._jowCache) window._jowCache = {};
+  const existing = getGlobalRecipeDB();
+  const existingIds = new Set(existing.map(r => r.id));
+  const existingNames = new Set(existing.map(r => (r.name||'').toLowerCase()));
   let added = 0;
+  const firestoreErrors = [];
+
   for(const r of recipes) {
-    if(!r?.id || !r?.name) continue;
-    if(!window._jowCache[r.id]) added++;
-    window._jowCache[r.id] = r;
-  }
+    if(!r.name || !r.id) continue;
+    // Skip if already in local cache (by ID or name)
+    if(existingIds.has(r.id) || existingNames.has(r.name.toLowerCase())) {
+      // Still try to push to Firestore in case it wasn't saved there yet
+    } else {
+      const clean = {...r};
+      delete clean._rawMeal;
+      clean._savedAt = Date.now();
+      existing.unshift(clean);
+      existingIds.add(r.id);
+      existingNames.add(r.name.toLowerCase());
+      added++;
+    }
 
-  // 2. Firestore en arrière-plan — base partagée, illimitée
-  if(typeof db !== 'undefined' && db && typeof currentUser !== 'undefined' && currentUser) {
-    (async () => {
+    // Always persist to Firestore shared collection
+    if(typeof db !== 'undefined' && db && typeof currentUser !== 'undefined' && currentUser) {
       try {
-        const batch = db.batch();
-        let n = 0;
-        for(const r of recipes) {
-          if(!r?.id || !r?.name || n >= 490) break;
-          const fd = {...r};
-          delete fd._rawMeal;
-          if(typeof fd.photo === 'string' && fd.photo.startsWith('data:')) delete fd.photo;
-          batch.set(db.collection('recipes').doc(r.id), {
-            ...fd,
-            savedBy:      currentUser.uid,
-            savedByEmail: currentUser.email || '',
-            savedAt:      firebase.firestore.FieldValue.serverTimestamp(),
-          }, { merge: true });
-          n++;
-        }
-        if(n > 0) {
-          await batch.commit();
-          if(typeof renderRecipesGrid === 'function') {
-            setTimeout(() => { try { renderRecipesGrid(); } catch(_) {} }, 300);
-          }
-        }
-      } catch(e) { console.warn('[DB]', e.code || e.message); }
-    })();
+        const firestoreData = {...r};
+        delete firestoreData._rawMeal;
+        // Strip base64 photos — too large for Firestore (1MB doc limit)
+        if(firestoreData.photo && firestoreData.photo.startsWith('data:')) delete firestoreData.photo;
+        await db.collection('recipes').doc(r.id).set({
+          ...firestoreData,
+          savedBy: currentUser.uid,
+          savedByEmail: currentUser.email || '',
+          savedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }, {merge: true});
+        console.log('[DB] ✅ Recipe saved to Firestore:', r.name);
+      } catch(e) {
+        console.error('[DB] ❌ Firestore save failed for', r.name, ':', e.code, e.message);
+        firestoreErrors.push(e.message);
+      }
+    } else if(!currentUser) {
+      console.warn('[DB] Not logged in — recipe saved to local cache only');
+    }
   }
 
+  if(added > 0) localStorage.setItem('sc_global_recipes', JSON.stringify(existing.slice(0, 300)));
+  if(firestoreErrors.length) console.warn('[DB] Firestore errors:', firestoreErrors);
   return added;
 }
 
 function searchGlobalDB(query, filters) {
   const localDB = getGlobalRecipeDB();
   if(!query && !filters) return localDB.slice(0, 20);
-  const q = (query || '').toLowerCase();
+  const q = (query||'').toLowerCase();
   return localDB.filter(r => {
     if(q && !r.name.toLowerCase().includes(q)) return false;
     if(filters?.diet && filters.diet !== 'all' && r.diet && r.diet !== filters.diet) return false;
@@ -6577,49 +6556,51 @@ function searchGlobalDB(query, filters) {
   }).slice(0, 20);
 }
 
-// Charge TOUTES les recettes Firestore dans _jowCache — sans limite.
-// Pagination automatique par lots de 500, non-bloquante, appelée une fois.
-let _recipesLoaded  = false;
-let _recipesLoading = false;
-let _recipesUnsub   = null; // compat (plus utilisé, onSnapshot supprimé)
-
+// Sync shared recipes from Firestore → local cache with real-time listener
+let _recipesUnsub = null;
 async function syncGlobalRecipesFromFirestore() {
-  if(_recipesLoaded || _recipesLoading) return;
   if(typeof db === 'undefined' || !db) return;
-  _recipesLoading = true;
-  if(!window._jowCache) window._jowCache = {};
+  if(_recipesUnsub) { _recipesUnsub(); _recipesUnsub = null; }
 
-  try {
-    let lastDoc = null, total = 0, hasMore = true;
-    while(hasMore) {
-      let q = db.collection('recipes').limit(500);
-      if(lastDoc) q = q.startAfter(lastDoc);
-      const snap = await q.get();
-      if(snap.empty) { hasMore = false; break; }
-      snap.forEach(doc => {
-        const r = {id: doc.id, ...doc.data()};
-        if(r.name) { window._jowCache[r.id] = r; total++; }
-      });
-      lastDoc = snap.docs[snap.docs.length - 1];
-      hasMore = snap.size === 500;
-      if(typeof renderRecipesGrid === 'function') {
-        setTimeout(() => { try { renderRecipesGrid(); } catch(_) {} }, 0);
+  function applySnap(snap) {
+    const existing = getGlobalRecipeDB();
+    const existingIds = new Set(existing.map(r => r.id));
+    let added = 0;
+    snap.forEach(doc => {
+      const r = {id: doc.id, ...doc.data(), savedAt: undefined, savedBy: undefined};
+      if(!existingIds.has(r.id) && r.name) {
+        existing.push(r);
+        existingIds.add(r.id);
+        added++;
+        // Si c'est une recette Jow, la mettre aussi dans le cache Jow
+        if(r.source === 'jow' && r.id) {
+          if(!window._jowCache) window._jowCache = {};
+          window._jowCache[r.id] = r;
+          if(typeof _jowSaveRecipe === 'function') _jowSaveRecipe(r);
+        }
       }
+    });
+    if(added > 0) {
+      localStorage.setItem('sc_global_recipes', JSON.stringify(existing.slice(0, 300)));
+      console.log('[Firestore] +' + added + ' recettes partagées (dont Jow)');
+      if(_menuTab === 'recipes') { try { (_myRecipesSubTab === 'favs' ? renderFavsGrid : renderRecipesGrid)(); } catch(e){} }
     }
-    _recipesLoaded = true;
-    console.log('[DB] ✅ ' + total + ' recettes chargées depuis Firestore');
+  }
+
+  // Simple query without orderBy — avoids needing a composite index
+  try {
+    _recipesUnsub = db.collection('recipes').limit(150).onSnapshot(
+      snap => applySnap(snap),
+      err  => {
+        console.warn('[Firestore] recipes onSnapshot error:', err.message);
+        // Fallback: one-time get
+        db.collection('recipes').limit(150).get().then(applySnap).catch(()=>{});
+      }
+    );
   } catch(e) {
-    console.warn('[Firestore]', e.message);
-    try {
-      const snap = await db.collection('recipes').limit(500).get();
-      snap.forEach(doc => { const r={id:doc.id,...doc.data()}; if(r.name) window._jowCache[r.id]=r; });
-      _recipesLoaded = true;
-    } catch(e2) {}
-  } finally { _recipesLoading = false; }
+    console.warn('[Firestore] syncGlobalRecipes setup error:', e.message);
+  }
 }
-
-function _invalidateRecipesCache() { _recipesLoaded = false; _recipesLoading = false; }
-
 
 
 
@@ -9317,7 +9298,7 @@ function getAllRecipes() {
 }
 
 function filterRecipesView(q) {
-  window._recipeSearch = (q || '').toLowerCase();
+  _recipeSearch=q.toLowerCase();
   renderRecipesGrid();
 }
 
@@ -9336,20 +9317,10 @@ function renderRecipesGrid() {
   const globalDB      = getGlobalRecipeDB ? getGlobalRecipeDB() : [];
   const q             = (window._recipeSearch || '').toLowerCase();
 
-  // Si le cache mémoire est vide, déclencher le chargement complet (non-bloquant)
-  if(globalDB.length === 0 && typeof syncGlobalRecipesFromFirestore === 'function') {
-    syncGlobalRecipesFromFirestore().catch(() => {});
-  }
-
   function matchSearch(r) {
     if(!q) return true;
-    const text = [
-      r.name || '',
-      r.origin || '',
-      ...(r.ingredients || []).map(i => typeof i==='string'?i:(i.name||'')),
-      ...(r.tags || []),
-    ].join(' ').toLowerCase();
-    return text.includes(q);
+    return (r.name||'').toLowerCase().includes(q)
+      || (r.ingredients||[]).some(i => (typeof i==='string'?i:i.name||'').toLowerCase().includes(q));
   }
 
   let html = '';
@@ -9363,8 +9334,8 @@ function renderRecipesGrid() {
       const isBm = bookmarks.some(b=>b.id===r.id);
       return `<div style="background:var(--bg);border-radius:var(--rs);box-shadow:var(--so);overflow:hidden;position:relative;">
         <div onclick="openCustomRecipeDetail('${r.id}')" style="cursor:pointer;">
-          ${r.photo?`<img src="${r.photo}" style="width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center top;display:block;" loading="lazy" onerror="_imgFallback(this,${JSON.stringify((r.photoCandidates||[]).slice(1))})">`
-                   :`<div style="aspect-ratio:4/3;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
+          ${r.photo?`<img src="${r.photo}" style="width:100%;height:80px;object-fit:cover;" loading="lazy" onerror="_imgFallback(this,${JSON.stringify((r.photoCandidates||[]).slice(1))})">`
+                   :`<div style="height:64px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
           <div style="padding:8px 8px 4px;">
             <div style="font-size:.76rem;font-weight:800;line-height:1.3;">${r.name}</div>
             <div style="font-size:.6rem;color:var(--tx2);margin-top:2px;">${r.time?r.time+'min · ':''}${r.kcal?r.kcal+'kcal':''}</div>
@@ -9395,8 +9366,8 @@ function renderRecipesGrid() {
       const isBm = bookmarks.some(b=>b.id===r.id);
       return `<div style="background:var(--bg);border-radius:var(--rs);box-shadow:var(--so);overflow:hidden;position:relative;cursor:pointer;">
         <div onclick="openRecipeDetail('${(r.id||r.name).replace(/'/g,"\\'")}')">
-          ${r.photo&&!r.photo.startsWith('data:')?`<img src="${r.photo}" style="width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center top;display:block;" onerror="this.style.display=&apos;none&apos;" loading="lazy">`
-                   :`<div style="aspect-ratio:4/3;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
+          ${r.photo&&!r.photo.startsWith('data:')?`<img src="${r.photo}" style="width:100%;height:80px;object-fit:cover;" onerror="this.style.display=&apos;none&apos;" loading="lazy">`
+                   :`<div style="height:64px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
           <div style="padding:8px 8px 4px;">
             <div style="font-size:.76rem;font-weight:800;line-height:1.3;">${r.name}</div>
             <div style="font-size:.6rem;color:var(--tx2);margin-top:2px;">${r.source==='jow'?'🇫🇷 Jow':r.source==='ai'?'🤖 IA':r.source==='translated'?'🇫🇷 Traduite':''}${r.time?' · '+r.time+'min':''}${r.kcal?' · '+r.kcal+'kcal':''}</div>
