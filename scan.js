@@ -1052,11 +1052,14 @@ async function _runFridgeScan(file) {
 
     setStatus('Identification des aliments…');
 
-    const PROMPT = `You are a food detection API. Look at this image and return ONLY a JSON object. No explanation, no markdown, no text. Start with { and end with }.
+    const PROMPT = `You are a food detection API. Your ENTIRE response must be a single valid JSON object — nothing before it, nothing after it. Do not repeat these instructions. Do not add markdown code fences. Do not add any commentary.
 
+The very first character of your response must be { and the very last character must be }.
+
+Format exactly like this example:
 {"aliments":[{"nom":"Tomates","emoji":"🍅","quantite":"4"},{"nom":"Lait","emoji":"🥛","quantite":"1L"}]}
 
-Detect every visible food item. Use French names. Maximum 12 items. Keep it concise. Return ONLY the JSON, nothing else.`;
+Detect every visible food item in the image. Use French names. Maximum 10 items. Keep names short (1-2 words). Respond with the JSON object only.`;
 
     const callGemini = async () => {
       const resp = await fetch('/api/gemini-vision', {
@@ -1077,20 +1080,41 @@ Detect every visible food item. Use French names. Maximum 12 items. Keep it conc
     // en plein milieu (troncature réseau/tokens côté API).
     const repairTruncatedAliments = (text) => {
       const items = [];
-      // Trouve chaque objet {...} complet dans le texte, un par un
+
+      // Passe 1 : objets {...} complets et bien formés (cas normal)
       const re = /\{\s*"nom"\s*:\s*"([^"]*)"\s*,\s*"emoji"\s*:\s*"([^"]*)"\s*,\s*"quantite"\s*:\s*"([^"]*)"\s*\}/g;
       let m;
       while((m = re.exec(text)) !== null) {
         items.push({ nom: m[1], emoji: m[2], quantite: m[3] });
       }
-      // Format alternatif : clés dans un ordre différent — tentative plus souple
-      if(!items.length) {
-        const re2 = /\{[^{}]*"nom"\s*:\s*"([^"]+)"[^{}]*\}/g;
-        while((m = re2.exec(text)) !== null) {
-          const chunk = m[0];
-          const emojiM = chunk.match(/"emoji"\s*:\s*"([^"]*)"/);
-          const qtyM   = chunk.match(/"quantite"\s*:\s*"([^"]*)"/);
-          items.push({ nom: m[1], emoji: emojiM?.[1] || '🥗', quantite: qtyM?.[1] || '' });
+      if(items.length) return items;
+
+      // Passe 2 : objets {...} avec clés dans un ordre différent
+      const re2 = /\{[^{}]*"nom"\s*:\s*"([^"]+)"[^{}]*\}/g;
+      while((m = re2.exec(text)) !== null) {
+        const chunk = m[0];
+        const emojiM = chunk.match(/"emoji"\s*:\s*"([^"]*)"/);
+        const qtyM   = chunk.match(/"quantite"\s*:\s*"([^"]*)"/);
+        items.push({ nom: m[1], emoji: emojiM?.[1] || '🥗', quantite: qtyM?.[1] || '' });
+      }
+      if(items.length) return items;
+
+      // Passe 3 : réponse coupée en TÊTE — le premier objet n'a plus son
+      // "nom", seulement des fragments type: "🥤","quantite":"1 canette"},
+      // {"nom":"confiture", ... On reconstruit sans exiger d'accolade
+      // ouvrante ni de "nom" en première position : chaque bloc entre deux
+      // "}," (ou début/fin de texte) est traité indépendamment, et on lit
+      // toutes les paires clé/valeur disponibles dans ce bloc.
+      const blocks = text.split(/\}\s*,\s*\{/);
+      for(const block of blocks) {
+        const nomM   = block.match(/"nom"\s*:\s*"([^"]+)"/);
+        const emojiM = block.match(/"emoji"\s*:\s*"([^"]*)"/);
+        const qtyM   = block.match(/"quantite"\s*:\s*"([^"]*)"/);
+        // Un bloc sans "nom" mais avec emoji+quantite est un fragment de
+        // tête tronqué — on ne peut pas le nommer, donc on l'ignore plutôt
+        // que d'ajouter un aliment vide.
+        if(nomM) {
+          items.push({ nom: nomM[1], emoji: emojiM?.[1] || '🥗', quantite: qtyM?.[1] || '' });
         }
       }
       return items;
@@ -1098,7 +1122,7 @@ Detect every visible food item. Use French names. Maximum 12 items. Keep it conc
 
     setStatus('Traitement…');
     let rawText = await callGemini();
-    console.log('[scan] Raw AI response (1st try):', rawText.slice(0, 500));
+    console.log('[scan] Raw AI response (1st try), length=' + rawText.length + ':', rawText.slice(0, 200), '...', rawText.slice(-60));
 
     let aliments = [];
     let parseError = null;
