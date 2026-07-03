@@ -1012,6 +1012,46 @@ function scanFridgeWithPhoto() {
   }
 }
 
+// Extrait le texte utile d'une réponse API Gemini, quel que soit le format
+// exact renvoyé par le backend :
+// - { text: "..." }                              → cas simple attendu
+// - { candidates: [{ content: { parts: [...] }}]} → réponse Gemini brute,
+//   éventuellement avec plusieurs parts si le modèle a le "thinking" activé
+//   (un part avec thought:true contient le raisonnement interne à ignorer,
+//   il faut prendre le part de texte final, généralement le dernier)
+function _extractGeminiText(data) {
+  if(!data) return '';
+
+  // Cas simple : le backend a déjà extrait le texte
+  if(typeof data.text === 'string' && data.text.trim()) return data.text.trim();
+
+  // Cas réponse Gemini brute (non transformée par le backend)
+  const parts = data?.candidates?.[0]?.content?.parts;
+  if(Array.isArray(parts) && parts.length) {
+    // Ignorer les parts de type "thought" (raisonnement interne du modèle),
+    // ne garder que les parts de texte final
+    const textParts = parts.filter(p => p && typeof p.text === 'string' && !p.thought);
+    if(textParts.length) return textParts.map(p => p.text).join('\n').trim();
+    // Si tout est marqué "thought" (ne devrait pas arriver), prendre quand
+    // même le dernier part texte disponible plutôt que de renvoyer rien
+    const anyText = parts.filter(p => p && typeof p.text === 'string');
+    if(anyText.length) return anyText[anyText.length - 1].text.trim();
+  }
+
+  // Autres formats possibles selon l'implémentation du backend
+  if(typeof data.result === 'string') return data.result.trim();
+  if(typeof data.response === 'string') return data.response.trim();
+  if(typeof data.content === 'string') return data.content.trim();
+  if(typeof data.thought === 'string') {
+    // Le backend a renvoyé le champ thought à la racine par erreur —
+    // ce n'est pas exploitable comme JSON, on le signale clairement
+    console.warn('[scan] Backend a renvoyé "thought" au lieu du texte final — le mode thinking de Gemini n\'est probablement pas correctement géré côté serveur.');
+    return '';
+  }
+
+  return '';
+}
+
 async function _runFridgeScan(file) {
   const loadingOv = document.createElement('div');
   loadingOv.id = '_fridgeScanLoading';
@@ -1072,7 +1112,8 @@ Detect every visible food item in the image. Use French names. Maximum 10 items.
         throw new Error('Erreur serveur ' + resp.status + ' — ' + errText.slice(0, 150));
       }
       const data = await resp.json();
-      return (data.text || '').trim();
+      console.log('[scan] Structure réponse API:', Object.keys(data), JSON.stringify(data).slice(0, 300));
+      return _extractGeminiText(data);
     };
 
     // Répare un JSON tronqué en ne gardant que les objets {...} complets
@@ -1162,7 +1203,7 @@ Detect every visible food item in the image. Use French names. Maximum 10 items.
         });
         if(resp2.ok) {
           const data2 = await resp2.json();
-          rawText = (data2.text || '').trim();
+          rawText = _extractGeminiText(data2);
           console.log('[scan] Raw AI response (retry):', rawText.slice(0, 500));
           raw = tryParse(rawText);
         }
