@@ -38,16 +38,31 @@ Réponds UNIQUEMENT en JSON valide sans balises markdown:
               { inline_data: { mime_type: mimeType, data: imageBase64 } },
               { text: promptText }
             ]}],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 1024 }
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 2048,
+              // Désactive le "thinking" (raisonnement interne) sur les modèles
+              // 2.0/2.5 qui l'activent par défaut. Sans ceci, les tokens de
+              // raisonnement sont comptés dans maxOutputTokens et peuvent
+              // épuiser tout le budget avant que le modèle n'écrive la vraie
+              // réponse JSON — d'où des réponses tronquées à 1 seul élément.
+              thinkingConfig: { thinkingBudget: 0 },
+            }
           })
         });
         const data = await r.json();
-        if (r.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const part = data.candidates?.[0]?.content?.parts?.find(p => p.text && !p.thought);
+        if (r.ok && part?.text) {
           console.log(`[vision] ✅ Gemini ${model} OK`);
-          return res.status(200).json({ text: data.candidates[0].content.parts[0].text, model });
+          return res.status(200).json({ text: part.text, model });
         }
         const err = data?.error?.message || '';
         console.warn(`[vision] Gemini ${model} failed (${r.status}): ${err}`);
+        // Réponse coupée par manque de tokens (thinking résiduel ou image complexe)
+        if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+          console.warn(`[vision] Gemini ${model} MAX_TOKENS atteint — tentative modèle suivant`);
+          continue;
+        }
         // Quota/billing dépassé → passer directement à Claude
         if (r.status === 429 || err.includes('quota') || err.includes('billing') || err.includes('exceeded')) {
           console.log('[vision] Quota Gemini dépassé → fallback Claude');
