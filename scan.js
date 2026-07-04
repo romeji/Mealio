@@ -1,4 +1,10 @@
 /* SMARTCARD — MODULE SCAN */
+
+// URL de base de l'API serverless (Vercel) — gemini-vision.js n'est plus
+// accessible en /api/... relatif car ce fichier n'est jamais exécuté sur
+// GitHub Pages (hébergement statique uniquement, aucun backend possible).
+const API_BASE = 'https://smartcard-eosin.vercel.app';
+
 async function startLiveBarcodeScan() {
   const videoEl = document.getElementById('barcodeVideo');
   if(!videoEl) return;
@@ -302,7 +308,7 @@ async function runTicketAnalysis() {
       const fr = new FileReader(); fr.onload=e=>img.src=e.target.result; fr.readAsDataURL(file);
     });
 
-    const resp = await fetch('/api/gemini-vision', {
+    const resp = await fetch(API_BASE + '/api/gemini-vision', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -1012,46 +1018,6 @@ function scanFridgeWithPhoto() {
   }
 }
 
-// Extrait le texte utile d'une réponse API Gemini, quel que soit le format
-// exact renvoyé par le backend :
-// - { text: "..." }                              → cas simple attendu
-// - { candidates: [{ content: { parts: [...] }}]} → réponse Gemini brute,
-//   éventuellement avec plusieurs parts si le modèle a le "thinking" activé
-//   (un part avec thought:true contient le raisonnement interne à ignorer,
-//   il faut prendre le part de texte final, généralement le dernier)
-function _extractGeminiText(data) {
-  if(!data) return '';
-
-  // Cas simple : le backend a déjà extrait le texte
-  if(typeof data.text === 'string' && data.text.trim()) return data.text.trim();
-
-  // Cas réponse Gemini brute (non transformée par le backend)
-  const parts = data?.candidates?.[0]?.content?.parts;
-  if(Array.isArray(parts) && parts.length) {
-    // Ignorer les parts de type "thought" (raisonnement interne du modèle),
-    // ne garder que les parts de texte final
-    const textParts = parts.filter(p => p && typeof p.text === 'string' && !p.thought);
-    if(textParts.length) return textParts.map(p => p.text).join('\n').trim();
-    // Si tout est marqué "thought" (ne devrait pas arriver), prendre quand
-    // même le dernier part texte disponible plutôt que de renvoyer rien
-    const anyText = parts.filter(p => p && typeof p.text === 'string');
-    if(anyText.length) return anyText[anyText.length - 1].text.trim();
-  }
-
-  // Autres formats possibles selon l'implémentation du backend
-  if(typeof data.result === 'string') return data.result.trim();
-  if(typeof data.response === 'string') return data.response.trim();
-  if(typeof data.content === 'string') return data.content.trim();
-  if(typeof data.thought === 'string') {
-    // Le backend a renvoyé le champ thought à la racine par erreur —
-    // ce n'est pas exploitable comme JSON, on le signale clairement
-    console.warn('[scan] Backend a renvoyé "thought" au lieu du texte final — le mode thinking de Gemini n\'est probablement pas correctement géré côté serveur.');
-    return '';
-  }
-
-  return '';
-}
-
 async function _runFridgeScan(file) {
   const loadingOv = document.createElement('div');
   loadingOv.id = '_fridgeScanLoading';
@@ -1092,134 +1058,53 @@ async function _runFridgeScan(file) {
 
     setStatus('Identification des aliments…');
 
-    const PROMPT = `You are a food detection API. Your ENTIRE response must be a single valid JSON object — nothing before it, nothing after it. Do not repeat these instructions. Do not add markdown code fences. Do not add any commentary.
+    const resp = await fetch(API_BASE + '/api/gemini-vision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imageBase64: b64,
+        mimeType: 'image/jpeg',
+        prompt: `You are a food detection API. Look at this image and return ONLY a JSON object. No explanation, no markdown, no text. Start with { and end with }.
 
-The very first character of your response must be { and the very last character must be }.
+{"aliments":[{"nom":"Tomates","emoji":"🍅","quantite":"4"},{"nom":"Lait","emoji":"🥛","quantite":"1L"},{"nom":"Fromage","emoji":"🧀","quantite":"200g"}]}
 
-Format exactly like this example:
-{"aliments":[{"nom":"Tomates","emoji":"🍅","quantite":"4"},{"nom":"Lait","emoji":"🥛","quantite":"1L"}]}
+Detect every visible food item. Use French names. Maximum 20 items. Return ONLY the JSON.`
+      })
+    });
 
-Detect every visible food item in the image. Use French names. Maximum 10 items. Keep names short (1-2 words). Respond with the JSON object only.`;
-
-    const callGemini = async () => {
-      const resp = await fetch('/api/gemini-vision', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: b64, mimeType: 'image/jpeg', prompt: PROMPT })
-      });
-      if(!resp.ok) {
-        const errText = await resp.text().catch(()=>'');
-        throw new Error('Erreur serveur ' + resp.status + ' — ' + errText.slice(0, 150));
-      }
-      const data = await resp.json();
-      console.log('[scan] Structure réponse API:', Object.keys(data), JSON.stringify(data).slice(0, 300));
-      return _extractGeminiText(data);
-    };
-
-    // Répare un JSON tronqué en ne gardant que les objets {...} complets
-    // trouvés dans le tableau "aliments", même si la réponse a été coupée
-    // en plein milieu (troncature réseau/tokens côté API).
-    const repairTruncatedAliments = (text) => {
-      const items = [];
-
-      // Passe 1 : objets {...} complets et bien formés (cas normal)
-      const re = /\{\s*"nom"\s*:\s*"([^"]*)"\s*,\s*"emoji"\s*:\s*"([^"]*)"\s*,\s*"quantite"\s*:\s*"([^"]*)"\s*\}/g;
-      let m;
-      while((m = re.exec(text)) !== null) {
-        items.push({ nom: m[1], emoji: m[2], quantite: m[3] });
-      }
-      if(items.length) return items;
-
-      // Passe 2 : objets {...} avec clés dans un ordre différent
-      const re2 = /\{[^{}]*"nom"\s*:\s*"([^"]+)"[^{}]*\}/g;
-      while((m = re2.exec(text)) !== null) {
-        const chunk = m[0];
-        const emojiM = chunk.match(/"emoji"\s*:\s*"([^"]*)"/);
-        const qtyM   = chunk.match(/"quantite"\s*:\s*"([^"]*)"/);
-        items.push({ nom: m[1], emoji: emojiM?.[1] || '🥗', quantite: qtyM?.[1] || '' });
-      }
-      if(items.length) return items;
-
-      // Passe 3 : réponse coupée en TÊTE — le premier objet n'a plus son
-      // "nom", seulement des fragments type: "🥤","quantite":"1 canette"},
-      // {"nom":"confiture", ... On reconstruit sans exiger d'accolade
-      // ouvrante ni de "nom" en première position : chaque bloc entre deux
-      // "}," (ou début/fin de texte) est traité indépendamment, et on lit
-      // toutes les paires clé/valeur disponibles dans ce bloc.
-      const blocks = text.split(/\}\s*,\s*\{/);
-      for(const block of blocks) {
-        const nomM   = block.match(/"nom"\s*:\s*"([^"]+)"/);
-        const emojiM = block.match(/"emoji"\s*:\s*"([^"]*)"/);
-        const qtyM   = block.match(/"quantite"\s*:\s*"([^"]*)"/);
-        // Un bloc sans "nom" mais avec emoji+quantite est un fragment de
-        // tête tronqué — on ne peut pas le nommer, donc on l'ignore plutôt
-        // que d'ajouter un aliment vide.
-        if(nomM) {
-          items.push({ nom: nomM[1], emoji: emojiM?.[1] || '🥗', quantite: qtyM?.[1] || '' });
-        }
-      }
-      return items;
-    };
+    if(!resp.ok) {
+      const errText = await resp.text().catch(()=>'');
+      throw new Error('Erreur serveur ' + resp.status + ' — ' + errText.slice(0, 150));
+    }
 
     setStatus('Traitement…');
-    let rawText = await callGemini();
-    console.log('[scan] Raw AI response (1st try), length=' + rawText.length + ':', rawText.slice(0, 200), '...', rawText.slice(-60));
+    const data = await resp.json();
+    const rawText = (data.text || '').trim();
+    console.log('[scan] Raw AI response:', rawText.slice(0, 500));
+
+    if(!rawText) throw new Error('Réponse vide de l\'IA.');
+
+    // Extract JSON: find first { and last } to strip any surrounding text
+    const firstBrace = rawText.indexOf('{');
+    const lastBrace  = rawText.lastIndexOf('}');
+    if(firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+      throw new Error('L\'IA n\'a pas retourné de JSON valide. Réponse: ' + rawText.slice(0, 100));
+    }
 
     let aliments = [];
-    let parseError = null;
-
-    const tryParse = (text) => {
-      const firstBrace = text.indexOf('{');
-      const lastBrace  = text.lastIndexOf('}');
-      if(firstBrace === -1) return null; // pas de JSON du tout
-      // Réponse complète (a bien une accolade fermante finale cohérente)
-      if(lastBrace > firstBrace) {
-        try {
-          const jsonStr = text.slice(firstBrace, lastBrace + 1);
-          const parsed = JSON.parse(jsonStr);
-          const raw = parsed.aliments || parsed.items || parsed.foods || [];
-          if(raw.length) return raw;
-        } catch(e) { /* JSON cassé malgré les accolades — on tente la réparation ci-dessous */ }
-      }
-      // Réponse tronquée : extraire les objets complets un par un
-      const repaired = repairTruncatedAliments(text);
-      return repaired.length ? repaired : null;
-    };
-
-    let raw = tryParse(rawText);
-
-    // Si échec total, un seul retry avec un prompt encore plus court
-    if(!raw) {
-      console.warn('[scan] JSON invalide/tronqué, nouvelle tentative avec prompt réduit…');
-      setStatus('Nouvelle tentative…');
-      try {
-        const resp2 = await fetch('/api/gemini-vision', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: b64, mimeType: 'image/jpeg',
-            prompt: 'List visible food items as JSON only: {"aliments":[{"nom":"...","emoji":"...","quantite":"..."}]}. Max 8 items. French names. JSON only, no text before or after.'
-          })
-        });
-        if(resp2.ok) {
-          const data2 = await resp2.json();
-          rawText = _extractGeminiText(data2);
-          console.log('[scan] Raw AI response (retry):', rawText.slice(0, 500));
-          raw = tryParse(rawText);
-        }
-      } catch(e2) { console.warn('[scan] Retry failed:', e2.message); }
+    const jsonStr = rawText.slice(firstBrace, lastBrace + 1);
+    try {
+      const parsed = JSON.parse(jsonStr);
+      const raw = parsed.aliments || parsed.items || parsed.foods || [];
+      aliments = raw.map(i => ({
+        nom:      (i.nom || i.name || i.label || '').trim(),
+        emoji:    i.emoji || '🥗',
+        quantite: i.quantite || i.qty || i.quantity || '',
+        categorie:i.categorie || i.category || '',
+      })).filter(i => i.nom.length > 1);
+    } catch(e) {
+      throw new Error('JSON malformé: ' + e.message + ' — ' + jsonStr.slice(0, 100));
     }
-
-    if(!raw) {
-      throw new Error('L\'IA n\'a pas retourné de JSON exploitable après 2 tentatives. Réponse: ' + rawText.slice(0, 100));
-    }
-
-    aliments = raw.map(i => ({
-      nom:      (i.nom || i.name || i.label || '').trim(),
-      emoji:    i.emoji || '🥗',
-      quantite: i.quantite || i.qty || i.quantity || '',
-      categorie:i.categorie || i.category || '',
-    })).filter(i => i.nom.length > 1);
 
     loadingOv.remove();
 
