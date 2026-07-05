@@ -5,10 +5,11 @@
 
 /* SMARTCARD — MODULE SCAN */
 
-// URL de base de l'API serverless (Vercel) — les endpoints /api/... ne sont
-// jamais exécutables tels quels sur GitHub Pages (hébergement statique
-// uniquement, aucun backend possible) donc on force le domaine complet.
-const API_BASE = 'https://smartcard-eosin.vercel.app';
+// API_BASE est déjà déclarée dans index.html (chargé avant ce fichier) —
+// NE PAS la redéclarer ici avec `const`, cela provoque une SyntaxError
+// fatale ("Identifier 'API_BASE' has already been declared") qui arrête
+// l'exécution de tout ce fichier, rendant showProfile/toggleTheme/
+// switchScanTab/etc. introuvables (bug vécu le 5 juillet 2026).
 
 // TICKET SCAN — Powered by Tesseract.js + Mistral AI
 // Basé sur Smart Receipt AI V8 ULTIME
