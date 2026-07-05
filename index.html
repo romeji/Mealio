@@ -1729,22 +1729,6 @@ body.offline-mode .offline-banner{display:block;}
           <button class="btn acc" onclick="explorerSearch()" style="flex-shrink:0;padding:10px 16px;border-radius:var(--rs);">Chercher</button>
         </div>
 
-        <!-- Filtre cuisine -->
-        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
-          <select id="explorerCuisine" class="inp" style="flex:0 0 auto;padding:8px 10px;font-size:.78rem;border-radius:var(--rs);" onchange="explorerSearch()">
-            <option value="">🌍 Toutes cuisines</option>
-            <option value="française">🇫🇷 Française</option>
-            <option value="italienne">🇮🇹 Italienne</option>
-            <option value="asiatique">🥢 Asiatique</option>
-            <option value="japonaise">🇯🇵 Japonaise</option>
-            <option value="mexicaine">🌮 Mexicaine</option>
-            <option value="indienne">🍛 Indienne</option>
-            <option value="américaine">🇺🇸 Américaine</option>
-            <option value="méditerranéenne">🫒 Méditerranéenne</option>
-            <option value="thaïlandaise">🇹🇭 Thaïlandaise</option>
-          </select>
-        </div>
-
         <!-- Quick tags -->
         <div id="explorerTags" style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;">
           <button class="spoon-recipe-tag" onclick="explorerSearchQuery('pâtes carbonara')">🍝 Pâtes</button>
@@ -2128,7 +2112,13 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "126521073547",
   appId: "1:126521073547:web:bdf2c727024098527f198e"
 };
-const ANTHROPIC_KEY = "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"
+// URL de base de l'API serverless (Vercel) — les endpoints /api/... ne sont
+// jamais exécutables tels quels sur GitHub Pages (hébergement statique
+// uniquement, aucun backend possible) donc on force le domaine complet.
+const API_BASE = 'https://smartcard-eosin.vercel.app';
+// Note sécurité : l'ancienne clé ANTHROPIC_KEY exposée en clair ici a été
+// retirée — elle n'était d'ailleurs jamais utilisée (les appels /api/claude
+// passent déjà par le backend Vercel qui détient la vraie clé côté serveur).
 const SPOONACULAR_KEY = "fe1df9e1047c4023b712a0a9db65dd3a";;
 const APP_VERSION = "v3.0";
 
@@ -2175,15 +2165,9 @@ function dbg() {}
 // ═══════════════════════════════════════════════
 // LOCAL STORAGE
 // ═══════════════════════════════════════════════
-let _saveStateTimer = null;
-function saveState(immediate) {
-  if(immediate) { _doSaveState(); return; }
-  if(_saveStateTimer) clearTimeout(_saveStateTimer);
-  _saveStateTimer = setTimeout(_doSaveState, 300);
-}
-function _doSaveState() {
-  _saveStateTimer = null;
+function saveState() {
   try {
+    // Exclude spoonCache (too large) from localStorage
     const {spoonCache, ...toSave} = state;
     localStorage.setItem('sc_state_v3', JSON.stringify(toSave));
   } catch(e) {}
@@ -2205,8 +2189,9 @@ function loadState() {
 // ═══════════════════════════════════════════════
 const _syncTimers = {};
 function syncToFirestore(key, value) {
-  // Poser le flag de protection IMMÉDIATEMENT (avant même l'écriture réseau)
-  // pour bloquer les onSnapshot qui recevraient encore l'ancienne valeur
+  // Poser le flag de protection IMMÉDIATEMENT (avant l'écriture réseau) pour
+  // que _applyRemoteSnapshot ignore tout onSnapshot basé sur l'ancienne
+  // valeur pendant que Firestore se met à jour (cf. _shouldIgnoreSnap).
   if(!window._localWriteTs) window._localWriteTs = {};
   window._localWriteTs[key] = Date.now();
 
@@ -2221,9 +2206,9 @@ function syncToFirestore(key, value) {
       if(personalKeys.includes(key)) {
         await _writeFieldReplacing(db.collection('users').doc(currentUser.uid), key, value);
       }
-      // Rafraîchir le timestamp après l'écriture réussie (garde la protection
-      // active encore 2s le temps que le onSnapshot local se déclenche avec
-      // la BONNE valeur, sans quoi une valeur intermédiaire pourrait passer)
+      // Rafraîchit le timestamp après écriture réussie pour garder la
+      // protection active le temps que le onSnapshot local revienne avec
+      // la BONNE valeur.
       window._localWriteTs[key] = Date.now();
     } catch(e) { console.warn('Sync error:', e.code || e.message); }
   }, 600);
@@ -2244,62 +2229,39 @@ async function _writeFieldReplacing(ref, key, value) {
   }
 }
 
-async function loadFromFirestore() {
-  if(!db || !currentUser) return;
-  try {
-    // Always load personal data from users/{uid} first (guaranteed to exist)
-    const userDoc = await db.collection('users').doc(currentUser.uid).get();
-    if(userDoc.exists) {
-      const d = userDoc.data();
-      if(d.items)    state.items    = d.items;
-      if(d.fridge)   state.fridge   = d.fridge;
-      if(d.history)  state.history  = d.history;
-      if(d.weekMenu) state.weekMenu = d.weekMenu;
-      if(d.budget)   state.budget   = d.budget;
-      saveState();
-    }
-    // If in a household, override with household data (shared/merged)
-    if(state.houseId) {
-      const houseDoc = await db.collection('households').doc(state.houseId).get();
-      if(houseDoc.exists) {
-        const d = houseDoc.data();
-        if(d.items)    state.items    = d.items;
-        if(d.fridge)   state.fridge   = d.fridge;
-        if(d.history)  state.history  = d.history;
-        if(d.weekMenu) state.weekMenu = d.weekMenu;
-        if(d.budget)   state.budget   = d.budget;
-        saveState();
-      }
-    }
-    renderAll();
-  } catch(e) { console.warn('Load error:', e); }
-}
-
 // Real-time listener for shared household + personal user data
 let _userUnsub = null;
+
+// Logique commune aux deux listeners (users/{uid} et households/{id}) —
+// évite la duplication du bloc de fusion qui existait identique 2 fois.
+// Inclut la protection anti-écrasement : ignore une valeur Firestore reçue
+// pendant les 2s qui suivent une écriture locale, pour éviter qu'un élément
+// tout juste supprimé (frigo, liste...) ne réapparaisse à cause d'un
+// snapshot encore basé sur l'ancienne valeur côté serveur.
+function _shouldIgnoreSnap(key) {
+  const ts = window._localWriteTs?.[key];
+  return ts && (Date.now() - ts < 2000);
+}
+
+function _applyRemoteSnapshot(d) {
+  let changed = false;
+  if(d.items    !== undefined && !_shouldIgnoreSnap('items')    && JSON.stringify(d.items)    !== JSON.stringify(state.items))    { state.items    = d.items;    changed = true; }
+  if(d.fridge   !== undefined && !_shouldIgnoreSnap('fridge')   && JSON.stringify(d.fridge)   !== JSON.stringify(state.fridge))   { state.fridge   = d.fridge;   changed = true; }
+  if(d.history  !== undefined && !_shouldIgnoreSnap('history')  && JSON.stringify(d.history)  !== JSON.stringify(state.history))  { state.history  = d.history;  changed = true; }
+  if(d.weekMenu !== undefined && !_shouldIgnoreSnap('weekMenu') && JSON.stringify(d.weekMenu) !== JSON.stringify(state.weekMenu)) { state.weekMenu = d.weekMenu; changed = true; }
+  if(d.budget   !== undefined && !_shouldIgnoreSnap('budget')   && d.budget !== state.budget) { state.budget = d.budget; changed = true; }
+  if(changed) { saveState(); renderAll(); }
+}
+
 function subscribeToHousehold() {
   if(itemsUnsub) { itemsUnsub(); itemsUnsub = null; }
   if(_userUnsub) { _userUnsub(); _userUnsub = null; }
   if(!db || !currentUser) return;
 
-  // Protection : ignorer les snapshots Firestore pendant 2s après une écriture locale
-  // (sinon la valeur ancienne de Firestore écrase la suppression locale)
-  const shouldIgnoreSnap = (key) => {
-    const ts = window._localWriteTs?.[key];
-    return ts && (Date.now() - ts < 2000);
-  };
-
   // Always listen to users/{uid} for personal data (weekMenu, fridge, items, history)
   _userUnsub = db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
     if(!doc.exists) return;
-    const d = doc.data();
-    let changed = false;
-    if(d.items    !== undefined && !shouldIgnoreSnap('items')    && JSON.stringify(d.items)    !== JSON.stringify(state.items))    { state.items    = d.items;    changed = true; }
-    if(d.fridge   !== undefined && !shouldIgnoreSnap('fridge')   && JSON.stringify(d.fridge)   !== JSON.stringify(state.fridge))   { state.fridge   = d.fridge;   changed = true; }
-    if(d.history  !== undefined && !shouldIgnoreSnap('history')  && JSON.stringify(d.history)  !== JSON.stringify(state.history))  { state.history  = d.history;  changed = true; }
-    if(d.weekMenu !== undefined && !shouldIgnoreSnap('weekMenu') && JSON.stringify(d.weekMenu) !== JSON.stringify(state.weekMenu)) { state.weekMenu = d.weekMenu; changed = true; }
-    if(d.budget   !== undefined && !shouldIgnoreSnap('budget')   && d.budget !== state.budget) { state.budget = d.budget; changed = true; }
-    if(changed) { saveState(); renderAll(); }
+    _applyRemoteSnapshot(doc.data());
   }, err => console.warn('User snapshot err:', err));
 
   // Migration : si on est proprio du foyer, s'assurer que houseCodes existe
@@ -2320,14 +2282,7 @@ function subscribeToHousehold() {
   if(state.houseId) {
     itemsUnsub = db.collection('households').doc(state.houseId).onSnapshot(doc => {
       if(!doc.exists) return;
-      const d = doc.data();
-      let changed = false;
-      if(d.items    !== undefined && !shouldIgnoreSnap('items')    && JSON.stringify(d.items)    !== JSON.stringify(state.items))    { state.items    = d.items;    changed = true; }
-      if(d.fridge   !== undefined && !shouldIgnoreSnap('fridge')   && JSON.stringify(d.fridge)   !== JSON.stringify(state.fridge))   { state.fridge   = d.fridge;   changed = true; }
-      if(d.history  !== undefined && !shouldIgnoreSnap('history')  && JSON.stringify(d.history)  !== JSON.stringify(state.history))  { state.history  = d.history;  changed = true; }
-      if(d.weekMenu !== undefined && !shouldIgnoreSnap('weekMenu') && JSON.stringify(d.weekMenu) !== JSON.stringify(state.weekMenu)) { state.weekMenu = d.weekMenu; changed = true; }
-      if(d.budget   !== undefined && !shouldIgnoreSnap('budget')   && d.budget !== state.budget) { state.budget = d.budget; changed = true; }
-      if(changed) { saveState(); renderAll(); }
+      _applyRemoteSnapshot(doc.data());
     }, err => console.warn('Household snapshot err:', err));
   }
 }
@@ -2591,7 +2546,15 @@ async function initFirebase() {
     auth = firebase.auth();
     if(!firebaseInitialized) {
       db = firebase.firestore();
-      // enablePersistence supprimé (lent sur iOS, crash multi-onglets failed-precondition)
+      // Only enable persistence once, before any other Firestore operations
+      try {
+        await db.enablePersistence({synchronizeTabs: true});
+      } catch(pe) {
+        // Already enabled or not supported — not critical
+        if(pe.code !== 'failed-precondition' && pe.code !== 'unimplemented') {
+          console.warn('Persistence:', pe.code);
+        }
+      }
       firebaseInitialized = true;
     }
     try { await auth.setPersistence(firebase.auth.Auth.Persistence?.LOCAL || 'local'); } catch(pe) { /* persistence may not be available */ }
@@ -2870,27 +2833,24 @@ function fillProfileForm() {
 }
 
 
-let _renderAllTimer = null;
 function renderAll() {
-  if(_renderAllTimer) cancelAnimationFrame(_renderAllTimer);
-  _renderAllTimer = requestAnimationFrame(() => {
-    _renderAllTimer = null;
-    const scrollPositions = {};
-    document.querySelectorAll('.view.on .vb').forEach(vb => {
-      scrollPositions[vb.closest('.view')?.id] = vb.scrollTop;
-    });
+  // Save scroll positions before re-rendering
+  const scrollPositions = {};
+  document.querySelectorAll('.view.on .vb').forEach(vb => {
+    scrollPositions[vb.closest('.view')?.id] = vb.scrollTop;
+  });
 
-    renderList();
-    renderFridge();
-    renderWeek();
+  renderList();
+  renderFridge();
+  renderWeek();
 
-    requestAnimationFrame(() => {
-      document.querySelectorAll('.view .vb').forEach(vb => {
-        const viewId = vb.closest('.view')?.id;
-        if(viewId && scrollPositions[viewId] !== undefined) {
-          vb.scrollTop = scrollPositions[viewId];
-        }
-      });
+  // Restore scroll positions after render
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.view .vb').forEach(vb => {
+      const viewId = vb.closest('.view')?.id;
+      if(viewId && scrollPositions[viewId] !== undefined) {
+        vb.scrollTop = scrollPositions[viewId];
+      }
     });
   });
 }
@@ -2973,22 +2933,6 @@ function addFridgeItemByName(name) {
 }
 
 // ── 3. SHARE LIST ─────────────────────────────────────────
-function shareList() {
-  const items = state.items.filter(i => !i.checked);
-  if(!items.length) { showToast('ℹ️','Liste vide','Ajoutez des articles avant de partager'); return; }
-
-  const text = '🛒 Ma liste de courses SmartCard\n\n'
-    + items.map(i => '• ' + (i.emoji||'') + ' ' + i.name + (i.qty > 1 ? ' ×'+i.qty : '')).join('\\n')
-    + '\n\nGénéré avec SmartCard 🍽️';
-
-  if(navigator.share) {
-    navigator.share({ title: 'Ma liste de courses', text }).catch(() => copyTextToClipboard(text));
-  } else {
-    copyTextToClipboard(text);
-    showToast('📋','Copié !','La liste est dans votre presse-papier');
-  }
-}
-
 function copyTextToClipboard(text) {
   navigator.clipboard?.writeText(text).catch(() => {
     const ta = document.createElement('textarea');
@@ -2998,26 +2942,39 @@ function copyTextToClipboard(text) {
   });
 }
 
+// Helper factorisé pour les overlays plein écran type modal/bottom-sheet.
+// Ne touche qu'à la MÉCANIQUE commune (création du div, style de base,
+// fermeture au clic sur le fond, ajout au DOM) — le contenu HTML de chaque
+// modal reste géré individuellement par chaque fonction appelante, donc
+// aucun changement visuel n'est introduit par cette factorisation.
+// align: 'center' (QR code, alertes) ou 'bottom' (bottom-sheets) — défaut 'bottom'.
+function _createFullscreenOverlay(html, opts) {
+  opts = opts || {};
+  const overlay = document.createElement('div');
+  const align = opts.align === 'center' ? 'center' : 'flex-end';
+  const blurCss = opts.blur === false ? '' : 'backdrop-filter:blur(' + (opts.blurPx || 8) + 'px);';
+  const bg = opts.bgAlpha != null ? 'rgba(0,0,0,' + opts.bgAlpha + ')' : 'rgba(0,0,0,.6)';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:' + (opts.zIndex || 900) + ';background:' + bg + ';' + blurCss + 'display:flex;align-items:' + align + ';justify-content:center;';
+  overlay.innerHTML = html;
+  if(opts.closeOnBackdrop !== false) {
+    overlay.onclick = e => { if(e.target === overlay) overlay.remove(); };
+  }
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
 function showQRCode(content, title) {
   // Generate QR using a free API
   const url = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(content);
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;';
-  overlay.innerHTML = '<div style="background:var(--bg);border-radius:20px;padding:24px;text-align:center;max-width:280px;width:90%;">'
+  _createFullscreenOverlay(
+    '<div style="background:var(--bg);border-radius:20px;padding:24px;text-align:center;max-width:280px;width:90%;">'
     + '<div style="font-weight:900;font-size:1rem;margin-bottom:16px;">'+title+'</div>'
     + '<img src="'+url+'" style="width:200px;height:200px;border-radius:12px;margin-bottom:16px;" alt="QR Code">'
     + '<div style="font-size:.72rem;color:var(--tx2);margin-bottom:16px;">Scannez ce code pour accéder à la liste</div>'
     + '<button onclick="this.closest(\'[style*=fixed]\').remove()" class="btn" style="width:100%;padding:12px;">Fermer</button>'
-    + '</div>';
-  overlay.onclick = e => { if(e.target === overlay) overlay.remove(); };
-  document.body.appendChild(overlay);
-}
-
-function shareQRList() {
-  const items = state.items.filter(i => !i.checked);
-  if(!items.length) { showToast('ℹ️','Liste vide','Rien à partager'); return; }
-  const text = items.map(i => (i.emoji||'') + ' ' + i.name).join('\n');
-  showQRCode(text, '📲 Ma liste de courses');
+    + '</div>',
+    { align: 'center' }
+  );
 }
 
 // ── 4. RECIPE COST ESTIMATION ─────────────────────────────
@@ -3029,11 +2986,6 @@ const PRIX_APPROX = {
   'pomme':3,'banane':1.8,'citron':3.5,'orange':2.8,
   'huile':3.5,'vinaigre':2,'sel':0.5,'sucre':1.2,'fécule':1.5,
 };
-
-function formatCost(c) {
-  if(!c) return '';
-  return c.toFixed(2).replace('.', ',') + ' €';
-}
 
 // ── 5. MENU HISTORY ───────────────────────────────────────
 function saveCurrentWeekToHistory() {
@@ -3072,20 +3024,6 @@ function _getWeekLabel() {
   const day = now.getDate();
   const months = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
   return 'Semaine du ' + day + ' ' + months[now.getMonth()];
-}
-
-function renderMenuHistory() {
-  if(!state.menuHistory || !state.menuHistory.length) return '';
-  return '<div style="margin-top:14px;">'
-    + '<div style="font-weight:900;font-size:.85rem;margin-bottom:10px;">📚 Semaines précédentes</div>'
-    + state.menuHistory.map(h => '<div style="background:var(--bg2);border-radius:var(--rs);padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="restoreWeekMenu('+JSON.stringify(h.weekKey)+')">'
-      + '<div style="flex:1;">'
-      + '<div style="font-weight:800;font-size:.82rem;">'+h.label+'</div>'
-      + '<div style="font-size:.68rem;color:var(--tx2);">'+h.daysCount+' jours · '+(h.avgKcal ? h.avgKcal+' kcal/j moy' : '')+'</div>'
-      + '</div>'
-      + '<button style="background:none;border:none;font-size:.72rem;color:var(--ac);font-weight:800;cursor:pointer;">Restaurer</button>'
-      + '</div>').join('')
-    + '</div>';
 }
 
 // ── 6. BARCODE SCANNER — Quagga2 ─────────────────────────────────
@@ -3268,29 +3206,6 @@ window.addEventListener('resize', applyTabletLayout);
 applyTabletLayout();
 
 
-function renderMenuPremiumLock() {
-  const vMenu = document.getElementById('vMenu');
-  if(!vMenu) return;
-  // Remove existing
-  const ex = document.getElementById('menuPremiumLockOverlay');
-  if(ex) ex.remove();
-  
-  const overlay = document.createElement('div');
-  overlay.id = 'menuPremiumLockOverlay';
-  overlay.style.cssText = 'position:absolute;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;text-align:center;';
-  overlay.innerHTML = '<div style="font-size:3rem;margin-bottom:12px;">📅</div>'
-    + '<div style="font-size:1.2rem;font-weight:900;margin-bottom:8px;">Menu & Planification</div>'
-    + '<div style="font-size:.82rem;color:var(--tx2);line-height:1.6;margin-bottom:20px;">Planifiez vos repas de la semaine, générez votre menu IA, explorez des milliers de recettes et suivez votre nutrition.<br><br>Fonctionnalité réservée aux membres <strong>Premium</strong>.</div>'
-    + '<div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px;">'
-    + '<button onclick="openPremiumModal("Menu Premium")" style="width:100%;padding:16px;border:none;border-radius:16px;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;font-weight:900;font-size:.95rem;cursor:pointer;">✨ Essai gratuit 7 jours</button>'
-    + '<div style="display:flex;gap:8px;">'
-    + ['📅 Menu IA','🍳 Recettes','🔍 Explorer','📊 Nutrition'].map(f=>'<div style="flex:1;background:var(--bg2);border-radius:10px;padding:10px 4px;font-size:.65rem;font-weight:800;color:var(--tx2);">'+f+'</div>').join('')
-    + '</div></div>';
-  // Make vMenu positioned
-  vMenu.style.position = 'relative';
-  vMenu.appendChild(overlay);
-}
-
 function switchTab(tab) {
   _doSwitchTab(tab);
   if(tab === 'frigo') loadRecipes();
@@ -3466,47 +3381,6 @@ function _getCachedRecipe(type, key) {
   return entry.data;
 }
 
-function _renderFridgeAIResults(recipes, results, status) {
-  if(status) status.textContent = recipes.length + ' recettes générées · sauvegardées 💾';
-  results.style.display = 'block';
-  results.innerHTML = '<div style="border-top:1px solid rgba(108,92,231,.15);padding-top:12px;margin-top:4px;">'
-    + recipes.map(r => {
-      const ings = Array.isArray(r.ingredients) ? r.ingredients : (r.ingredients_used||[]).map(i=>({name:i}));
-      const photo = r.photo || null;
-      return '<div style="background:var(--bg);border-radius:var(--rs);box-shadow:var(--so);margin-bottom:10px;overflow:hidden;cursor:pointer;" data-rid="' + (r.id||'') + '" data-rname="' + (r.name||'').replace(/"/g,'&quot;') + '" onclick="openRecipeDetail(this.dataset.rid||this.dataset.rname)">'
-        // Photo band
-        + (photo ? '<img src="'+photo+'" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:center top;display:block;" loading="lazy" onerror="this.remove()">' : '')
-        // Body
-        + '<div style="padding:12px 14px;">'
-        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
-        + '<div style="width:38px;height:38px;background:var(--grad);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">' + (r.emoji||'🍽️') + '</div>'
-        + '<div style="flex:1;">'
-        + '<div style="font-weight:900;font-size:.88rem;">' + r.name + '</div>'
-        + '<div style="font-size:.65rem;color:var(--tx2);margin-top:2px;">'
-        + (r.time ? '⏱ '+r.time+'min · ' : '')
-        + (r.kcal ? '🔥 '+r.kcal+' kcal' : '')
-        + '</div></div>'
-        + '<span style="font-size:.55rem;background:var(--grad);color:#fff;padding:3px 8px;border-radius:var(--rp);font-weight:900;flex-shrink:0;">IA</span>'
-        + '</div>'
-        // Description
-        + (r.description ? '<div style="font-size:.75rem;color:var(--tx2);margin-bottom:8px;line-height:1.45;">'+r.description+'</div>' : '')
-        // Ingredients chips
-        + (ings.length ? '<div style="margin-bottom:6px;"><div style="font-size:.62rem;font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Ingrédients</div>'
-          + '<div style="display:flex;flex-wrap:wrap;gap:4px;">'
-          + ings.map(i => {
-              const nm = typeof i==='string' ? i : (i.name||'');
-              const qty = typeof i==='object' && i.qty ? i.qty+' ' : '';
-              return '<span style="background:var(--bg2);border-radius:var(--rp);padding:3px 9px;font-size:.65rem;font-weight:700;">'+qty+nm+'</span>';
-            }).join('')
-          + '</div></div>' : '')
-        // Instructions preview
-        + (Array.isArray(r.instructions) && r.instructions.length ? '<div style="font-size:.68rem;color:var(--tx2);border-top:1px solid var(--bg2);padding-top:6px;margin-top:6px;"><strong>Étape 1:</strong> '+r.instructions[0].slice(0,80)+(r.instructions[0].length>80?'…':'')+'</div>' : '')
-        + '</div>'
-        + '</div>';
-    }).join('')
-    + '</div>';
-}
-
 let _mdbFridgeCache = null;
 let _mdbFridgeCacheKey = '';
 
@@ -3565,7 +3439,7 @@ async function loadRecipes() {
 
   try {
     const params = new URLSearchParams({ q: jowQuery, limit: '12' });
-    const resp = await fetch('/api/jow?' + params);
+    const resp = await fetch(API_BASE + '/api/jow?' + params);
     if(!resp.ok) throw new Error('Jow API ' + resp.status);
     const data = await resp.json();
     const rawList = data.recipes || [];
@@ -3591,26 +3465,6 @@ async function loadRecipes() {
   }
 }
 
-async function _loadRecipesWithClaude(grid, fridgeNames, localMatches) {
-  try {
-    const ingrList = fridgeNames.slice(0,8).join(', ');
-    const resp = await fetch('/api/claude',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:2000,
-        messages:[{role:'user',content:`Tu es chef cuisinier. Avec ces ingrédients: ${ingrList}
-Propose 4 recettes réalisables. Réponds UNIQUEMENT en JSON:
-{"recipes":[{"name":"Nom","emoji":"🍳","time":25,"kcal":400,"ingredients":["ingr1","ingr2"],"instructions":["Étape 1","Étape 2"]}]}`}]})
-    });
-    const data = await resp.json();
-    const text = (data.content||[]).find(x=>x.type==='text')?.text||'';
-    const j = text.slice(text.indexOf('{'), text.lastIndexOf('}')+1);
-    const parsed = JSON.parse(j);
-    const recipes = (parsed.recipes||[]).map((r,i)=>({...r,id:'fr_'+Date.now()+'_'+i,source:'claude_fridge',ingredients:r.ingredients||[]}));
-    _renderFridgeRecipes(grid, [...localMatches, ...recipes]);
-  } catch(e) {
-    _renderFridgeRecipes(grid, localMatches);
-  }
-}
 function _renderFridgeRecipes(grid, recipes) {
 
   const empty =
@@ -3916,7 +3770,7 @@ async function translateRecipeFull(recipe) {
   const ingrs = (recipe.extendedIngredients||recipe.ingredients||[]).slice(0,12);
   const steps = (recipe.analyzedInstructions?.[0]?.steps||[]).slice(0,10);
   try {
-    const data = await fetch('/api/claude',{
+    const data = await fetch(API_BASE + '/api/claude',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -3941,127 +3795,8 @@ async function translateRecipeFull(recipe) {
 // ══ Traduction automatique via Claude — sans bouton, directement dans la modale ══
 // ══ Traduction automatique via Claude Haiku (économique) ══
 // claude-haiku = ~10x moins cher que Sonnet, parfait pour la traduction
-async function autoTranslateRecipeInto(containerEl, recipe) {
-  if(!recipe) return;
-  if(!recipe.name && recipe.title) recipe.name = recipe.title;
-
-  // Construire le contenu à traduire
-  const ingredients = (recipe.extendedIngredients || recipe.ingredients || []).slice(0, 20).map(i => {
-    if(typeof i === 'string') return i;
-    const qty = i.amount ? (Number(i.amount).toFixed(0) + ' ' + (i.unit||'')).trim() : (i.qty||'');
-    return (qty + ' ' + (i.originalName||i.name||i.original||'')).trim();
-  }).filter(Boolean);
-
-  const steps = [
-    ...((recipe.analyzedInstructions||[])[0]?.steps||[]).map(s=>s.step),
-    ...(Array.isArray(recipe.instructions) ? recipe.instructions.map(s=>typeof s==='string'?s:s.step||'') : [])
-  ].filter((v,i,a)=>v && a.indexOf(v)===i).slice(0, 15);
-
-  const title = recipe.name || recipe.title || '';
-  if(!title && !ingredients.length) return;
-
-  // Loader discret
-  const loader = document.createElement('div');
-  loader.id = 'autoTranslateLoader';
-  loader.innerHTML = '<div style="font-size:.62rem;color:var(--tx3);text-align:center;padding:7px 10px;display:flex;align-items:center;gap:5px;justify-content:center;border-top:1px solid var(--bg2);">'
-    + '<div style="width:9px;height:9px;border-radius:50%;border:2px solid var(--bg2);border-top-color:var(--ac);animation:spin .7s linear infinite;flex-shrink:0;"></div>'
-    + '<span>Traduction 🇫🇷 en cours…</span></div>';
-  containerEl.appendChild(loader);
-
-  try {
-    // Utiliser Claude Haiku — très économique (~10x moins cher que Sonnet)
-    const payload = {
-      model: 'claude-3-5-haiku-20241022',
-      max_tokens: 1800,
-      system: 'Expert culinaire. Traduis ce JSON de recette anglaise en français naturel. Règles strictes: mesures→métriques (1 cup=240ml, 1oz=28g, 1tbsp=15ml, °F-32÷1.8=°C), ingrédients exotiques→nom français + original entre parenthèses si inconnu (ex: Casabe→Galette de manioc (Casabe)), étapes→style chef français. JSON uniquement, zéro markdown.',
-      messages: [{
-        role: 'user',
-        content: 'Traduis:\n' + JSON.stringify({title, ingredients, steps}) + '\n\nJSON: {"title":"...","ingredients":["..."],"steps":["..."]}'
-      }]
-    };
-
-    const resp = await fetch('/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if(!resp.ok) throw new Error('API ' + resp.status);
-    const data = await resp.json();
-    const raw = (data.content||[]).find(x=>x.type==='text')?.text || '';
-    const jsonStr = raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1);
-    const t = JSON.parse(jsonStr);
-    if(!t.title && !t.ingredients) throw new Error('empty');
-
-    loader.remove();
-
-    // ── Mettre à jour le titre ──
-    containerEl.querySelectorAll('[data-recipe-title]').forEach(el => { if(t.title) el.textContent = t.title; });
-
-    // ── Mettre à jour les ingrédients ──
-    containerEl.querySelectorAll('[data-ingr-idx]').forEach(el => {
-      const i = parseInt(el.dataset.ingrIdx);
-      if(t.ingredients && t.ingredients[i]) {
-        // Conserver la quantité (span) + remplacer le texte du nom
-        const span = el.querySelector('span');
-        if(span) {
-          el.textContent = '';
-          el.appendChild(span);
-          el.appendChild(document.createTextNode(' ' + t.ingredients[i]));
-        } else {
-          el.textContent = t.ingredients[i];
-        }
-      }
-    });
-
-    // ── Mettre à jour les étapes ──
-    containerEl.querySelectorAll('[data-step-idx]').forEach(el => {
-      const i = parseInt(el.dataset.stepIdx);
-      if(t.steps && t.steps[i]) el.textContent = t.steps[i];
-    });
-
-    // Badge 🇫🇷
-    containerEl.querySelectorAll('.fr-badge').forEach(el => { el.style.display = 'inline-flex'; });
-
-  } catch(e) {
-    loader?.remove();
-    console.warn('Auto-translate failed:', e.message);
-    // Silencieux — la recette reste en anglais si la traduction échoue
-  }
-}
-
 // Helper: francophone common ingredient words
 
-
-async function translateInline(containerId) {
-  const el = document.getElementById(containerId);
-  if(!el) return;
-  const recipe = window._translateRecipe;
-  if(!recipe) { el.innerHTML='<div style="color:var(--rd);padding:12px;">Recette introuvable.</div>'; return; }
-  if(!recipe.name&&recipe.title) recipe.name=recipe.title;
-  el.style.display='block';
-  el.innerHTML='<div style="text-align:center;padding:20px;"><div style="width:28px;height:28px;border-radius:50%;border:3px solid var(--bg2);border-top-color:var(--ac);animation:spin .8s linear infinite;margin:0 auto 10px;"></div><div style="font-size:.78rem;color:var(--tx2);">Traduction IA en cours…</div></div>';
-  const result = await translateRecipeFull(recipe);
-  if(!result||!result.name) {
-    el.innerHTML='<div style="color:var(--rd);padding:12px;font-size:.8rem;">❌ Traduction échouée. Réessayez.</div>';
-    return;
-  }
-  window._lastTranslation = result;
-  let html='<div style="background:var(--bg2);border-radius:var(--rs);padding:14px;margin-top:6px;">';
-  html+='<div style="font-weight:900;font-size:.92rem;margin-bottom:10px;">🇫🇷 '+result.name+'</div>';
-  if(result.ingredients?.length){
-    html+='<div style="font-size:.68rem;font-weight:800;color:var(--tx3);text-transform:uppercase;margin-bottom:6px;">Ingrédients</div>';
-    result.ingredients.forEach(i=>{html+='<div style="font-size:.78rem;padding:4px 0;border-bottom:1px solid var(--bg3);">· '+i+'</div>';});
-  }
-  if(result.instructions?.length){
-    html+='<div style="font-size:.68rem;font-weight:800;color:var(--tx3);text-transform:uppercase;margin:10px 0 6px;">Préparation</div>';
-    result.instructions.forEach((s,i)=>{html+='<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--bg3);"><div style="width:20px;height:20px;border-radius:50%;background:var(--grad);color:#fff;font-size:.65rem;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(i+1)+'</div><div style="font-size:.78rem;line-height:1.6;">'+s+'</div></div>';});
-  }
-  if(result.tips) html+='<div style="background:rgba(52,152,219,.1);border-radius:var(--rx);padding:10px;margin-top:10px;font-size:.75rem;color:var(--bl);">💡 '+result.tips+'</div>';
-  html+='<button class="btn acc" style="width:100%;padding:12px;margin-top:12px;font-weight:800;" onclick="saveTranslatedRecipe()">💾 Sauvegarder en français</button>';
-  html+='</div>';
-  el.innerHTML=html;
-}
 
 async function saveTranslatedRecipe() {
   const t = window._lastTranslation;
@@ -4106,67 +3841,65 @@ async function saveTranslatedRecipe() {
 // MEALDB — Suggestions depuis le frigo (≥ 3 ingrédients)
 // ═══════════════════════════════════════════════════════════
 
-// renderMealDBFridgeStatus removed (TheMealDB cleanup)
-function renderMealDBFridgeStatus() {}
-// searchMealDBFromFridge removed (TheMealDB cleanup)
-async function searchMealDBFromFridge() {}
-// openMealDBRecipe removed (TheMealDB cleanup)
-async function openMealDBRecipe() {}
 // Traduire un meal MealDB brut → objet traduit en français
-// _translateMealDB removed (TheMealDB cleanup)
-async function _translateMealDB() {}
-// _showMealDBDetail removed (TheMealDB cleanup)
-function _showMealDBDetail() {}
-// _saveMealDBToSharedDB removed (TheMealDB cleanup)
-async function _saveMealDBToSharedDB() {}
-function addMDBMissingToList(names) {
-  let added = 0;
-  names.forEach(name => {
-    if(!state.items.some(it=>it.name.toLowerCase()===name.toLowerCase())) {
-      state.items.unshift({id:'i'+Date.now()+Math.random().toString(36).slice(2,7),name,emoji:'🛒',cat:'🍝 Épicerie',price:0,qty:'',checked:false,addedAt:Date.now(),addedBy:currentUser?currentUser.email:''});
-      added++;
-    }
-  });
-  saveItems(); renderList();
-  document.getElementById('mdbDetailOverlay')?.remove();
-  showToast('✅',added+' ajouté(s)','Ingrédients manquants → liste');
-  switchTab('liste');
-}
-
 // ═══════════════════════════════════════════════════════════
 // FAVORIS — Onglet dédié
 // ═══════════════════════════════════════════════════════════
+// Fonction unifiée : gère les favoris depuis TOUTES les sources (recettes
+// classiques, cache Jow, recette courante ouverte). Remplace l'ancien
+// doublon toggleBookmark / _jowToggleBookmark qui avaient des logiques
+// divergentes (anti-doublon incohérent, pas toujours de sauvegarde Firestore).
 function toggleBookmark(id) {
   if(!state.recipeBookmarks) state.recipeBookmarks = [];
-  const idx = state.recipeBookmarks.findIndex(b=>b.id===id);
-  if(idx >= 0) {
-    state.recipeBookmarks.splice(idx, 1);
-    showToast('☆','Retiré des favoris','');
+  const alreadyIdx = state.recipeBookmarks.findIndex(b => b.id === id);
+
+  if(alreadyIdx >= 0) {
+    state.recipeBookmarks.splice(alreadyIdx, 1);
+    showToast('☆', 'Retiré des favoris', '');
   } else {
-    // Trouver la recette
-    const all = [...getAllRecipes(), ...(window._mdbDetailCache ? Object.values(window._mdbDetailCache).map(m=>{
-      const ings=[];for(let i=1;i<=20;i++){const n=m['strIngredient'+i];if(n&&n.trim())ings.push({name:n.trim(),qty:(m['strMeasure'+i]||'').trim()});}
-      return null; // mealdb removed
-    }) : [])];
-    const r = all.find(x=>x.id===id) || window._currentRecipe;
+    const r = (window._jowCache && window._jowCache[id])
+           || getAllRecipes().find(x => x.id === id)
+           || window._currentRecipe;
     if(r) {
-      state.recipeBookmarks.push({...r, bookmarkedAt: Date.now()});
-      showToast('⭐','Ajouté aux favoris',r.name);
+      const alreadyInBm = state.recipeBookmarks.some(b => b.id === r.id || b.name === r.name);
+      if(!alreadyInBm) {
+        state.recipeBookmarks.push({...r, bookmarkedAt: Date.now()});
+        if(typeof saveToGlobalDB === 'function') saveToGlobalDB([r]).catch(() => {});
+        showToast('⭐', 'Favori ajouté', r.name);
+      } else {
+        showToast('ℹ️', 'Déjà en favori', r.name);
+        return;
+      }
     }
   }
   saveState();
-  // Mettre à jour les boutons visibles
+
+  const isNowBm = state.recipeBookmarks.some(b => b.id === id);
   document.querySelectorAll('[onclick*="toggleBookmark"]').forEach(btn => {
-    if(btn.getAttribute('onclick')?.includes("'"+id+"'") || btn.getAttribute('onclick')?.includes('"'+id+'"')) {
-      const isNowBm = state.recipeBookmarks.some(b=>b.id===id);
+    const oc = btn.getAttribute('onclick') || '';
+    if(oc.includes("'" + id + "'") || oc.includes('"' + id + '"')) {
       if(btn.textContent.includes('☆') || btn.textContent.includes('⭐')) {
         btn.textContent = isNowBm ? '⭐' : '☆';
       }
     }
   });
+  // Mettre à jour aussi les boutons spécifiques à la vue Jow (id direct, pas onclick)
+  const jowBtn = document.getElementById('jbm_' + id);
+  if(jowBtn) jowBtn.textContent = isNowBm ? '⭐' : '☆';
+  const modalBm = document.getElementById('jowModalBm');
+  if(modalBm) modalBm.textContent = isNowBm ? '⭐' : '☆';
+
   if(document.getElementById('menuPanelFavorites')?.style.display !== 'none') {
-    renderFavoritesPanel();
+    if(typeof renderFavoritesPanel === 'function') renderFavoritesPanel();
   }
+  if(typeof renderFavsGrid === 'function') setTimeout(() => renderFavsGrid(), 100);
+  if(typeof renderRecipesGrid === 'function') setTimeout(() => renderRecipesGrid(), 100);
+}
+
+// Alias de compatibilité — _jowToggleBookmark appelait auparavant sa propre
+// logique dupliquée ; elle délègue maintenant entièrement à toggleBookmark.
+function _jowToggleBookmark(id) {
+  toggleBookmark(id);
 }
 
 function renderFavoritesPanel() {
@@ -4488,10 +4221,9 @@ async function _queryRecipesForGeneration(settings, diet) {
 
   if(typeof db !== 'undefined' && db && typeof currentUser !== 'undefined' && currentUser) {
     try {
-      // Pas de .where('origin') — la casse/variations ("Italienne" vs
-      // "italienne") rendent la comparaison stricte Firestore peu fiable.
-      // Filtrage côté client à la place.
-      const snap = await db.collection('recipes').limit(300).get();
+      let q = db.collection('recipes').limit(60);
+      if(settings.cuisine) q = q.where('origin', '==', settings.cuisine);
+      const snap = await q.get();
       const seen = new Set(pool.map(r => r.id));
       const extra = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
@@ -4505,20 +4237,8 @@ async function _queryRecipesForGeneration(settings, diet) {
 // Vérifie si une recette respecte les filtres cuisine + diète + allergènes
 function _recipeMatchesFilters(r, settings, diet) {
   if(!r || !r.id) return false;
-
-  // Exclure desserts/collations — on veut uniquement déjeuner/dîner
-  const mealTypes = r.mealTypes || [];
-  if(mealTypes.length > 0) {
-    const hasLunchOrDinner = mealTypes.some(t => t === 'l' || t === 'd');
-    if(!hasLunchOrDinner) return false;
-  }
-  const nameLow = (r.name || '').toLowerCase();
-  const tags = (r.tags || []).map(t => t.toLowerCase());
-  if(nameLow.includes('dessert') || nameLow.includes('gâteau') || nameLow.includes('tarte sucrée')
-     || tags.includes('dessert') || tags.includes('sweet')) return false;
-
   const eh = r.eatingHabits || {};
-  if(settings.cuisine && (!r.origin || !r.origin.toLowerCase().includes(settings.cuisine.toLowerCase()))) return false;
+  if(settings.cuisine && r.origin !== settings.cuisine) return false;
   if(diet === 'veg'    && !eh.vegetarian)  return false;
   if(diet === 'vegan'  && !eh.vegan)       return false;
   if(diet === 'pesc'   && !eh.pescatarian) return false;
@@ -4526,7 +4246,6 @@ function _recipeMatchesFilters(r, settings, diet) {
   if(diet === 'halal'  && !eh.porkless)    return false;
   if((settings.selectedAllergens||[]).some(a => _recipeHasAllergen(r, a))) return false;
   return true;
-
 }
 
 function _pickSequence(pool, count) {
@@ -4549,13 +4268,7 @@ async function generateAIMenuFull() {
   if(txt) txt.innerHTML = spinner + 'Recherche dans votre base\u2026';
 
   const p = state.profile || {};
-  // Lire le régime depuis le bouton actif dans le panneau menu
-  // state.selectedDiet[0] peut conserver un résidu d'une session précédente
-  const activeDietBtn = document.querySelector('[data-diet].on');
-  const diet = activeDietBtn?.dataset?.diet
-            || state.selectedDiet?.[0]
-            || p.diet
-            || 'omnivore';
+  const diet = state.selectedDiet[0] || p.diet || 'omnivore';
   const cals = calculateDailyCalories(p);
   const ldTarget = cals ? Math.round(cals * 0.65) : 0;
   const settings = _readMenuFilterSettings();
@@ -4589,19 +4302,18 @@ async function generateAIMenuFull() {
     const emptyDueToAllergen = [];
     pool = _applyMenuFilters(pool, settings, 'd\u00e9jeuner+d\u00eener', emptyDueToAllergen);
 
-    // Etape 4 : erreur claire si pool insuffisant
+    // Etape 4 : erreur claire si pool toujours insuffisant - AUCUN fallback random
     if(pool.length < MIN_POOL) {
       const what = [];
       if(settings.cuisine) what.push('cuisine ' + settings.cuisine);
-      if(diet && diet !== 'omnivore') what.push('régime ' + diet);
+      if(diet !== 'omnivore') what.push('r\u00e9gime ' + diet);
       if(settings.maxTime) what.push('< ' + settings.maxTime + ' min');
-      if((settings.selectedAllergens||[]).length) what.push('sans ' + settings.selectedAllergens.join('/'));
+      if(settings.selectedAllergens.length) what.push('sans ' + settings.selectedAllergens.join('/'));
       const detail = what.length ? ' pour\u00a0: ' + what.join(', ') : '';
-      const need = MIN_POOL - pool.length;
-      const msg = pool.length === 0
-        ? 'Aucune recette trouvée' + detail + '.\nExplorez Jow dans l\'onglet Recettes pour en ajouter.'
-        : pool.length + ' recette(s) trouvée(s)' + detail + ', il en manque ' + need + '.\nExplorez Jow pour enrichir votre base' + (settings.cuisine ? ' ' + settings.cuisine : '') + '.';
-      showToast('⚠️', 'Recettes insuffisantes', msg);
+      showToast('\u26a0\ufe0f', 'Recettes insuffisantes',
+        pool.length === 0
+          ? 'Aucune recette trouv\u00e9e' + detail + '. \u00c9largissez vos filtres ou explorez Jow d\u2019abord.'
+          : pool.length + ' recette(s) trouv\u00e9e(s)' + detail + ', il en faut ' + MIN_POOL + '. \u00c9largissez vos filtres.');
       return;
     }
 
@@ -4679,7 +4391,7 @@ function _getMealQueriesForProfile(p, diet, allergies) {
 async function _fetchJowRecipesForType(query, limit, diet) {
   try {
     const params = new URLSearchParams({ q: query || 'recette', limit: String(limit) });
-    const resp = await fetch('/api/jow?' + params);
+    const resp = await fetch(API_BASE + '/api/jow?' + params);
     if(!resp.ok) return [];
     const data = await resp.json();
     const recipes = (data.recipes || []).map(_jowNormalize);
@@ -4718,122 +4430,19 @@ async function _fetchJowWithFallback(query, fallbackQuery, limit, diet) {
 }
 
 
-function generateAIMenu() { generateAIMenuFull(); } // compat alias
-
 // ══════════════════════════════════════════════════════
 // SPOONACULAR API INTEGRATION
 // ══════════════════════════════════════════════════════
 
 
 
-// searchWithTheMealDB removed (TheMealDB cleanup)
-async function searchWithTheMealDB() {}
-async function searchWithClaudeFallback(q) {
-  const grid = document.getElementById('spoonResults');
-  if(!grid) return;
-  try {
-    const diet = state.selectedDiet[0]||'omnivore';
-    const p = state.profile||{};
-    const prompt = `Propose 6 recettes de cuisine pour: "${q}", régime: ${diet}${p.goal?', objectif: '+p.goal:''}.
-Réponds UNIQUEMENT en JSON: {"recipes":[{"name":"Nom recette","emoji":"🍽️","time":30,"kcal":450,"prot":25,"carb":40,"fat":15,"diet":"${diet}","ingredients":[{"name":"Ingrédient","qty":100,"unit":"g"}],"instructions":["Étape 1","Étape 2"]}]}`;
-    const resp = await fetch('/api/claude',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]})
-    });
-    const data = await resp.json();
-    const text = (data.content||[]).find(c=>c.type==='text')?.text||'';
-    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
-    const recipes = (parsed.recipes||[]).map((r,i)=>({...r,id:'claude_'+Date.now()+'_'+i,source:'claude'}));
-    if(recipes.length) {
-      state.spoonCache[q.toLowerCase()] = recipes;
-      renderSpoonResults(recipes);
-      showToast('🤖','IA Claude','Recettes générées par IA (Spoonacular indisponible)');
-    }
-  } catch(e) {
-    if(grid) grid.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx3);font-size:.82rem;">Recherche temporairement indisponible. Réessayez.</div>';
-  }
-}
-
-
-function translateQueryToEnglish(query) {
-  if(!query) return query;
-  const frToEn = {
-    'poulet':'chicken','boeuf':'beef','veau':'veal','agneau':'lamb',
-    'porc':'pork','dinde':'turkey','canard':'duck','lapin':'rabbit',
-    'saumon':'salmon','thon':'tuna','cabillaud':'cod','crevettes':'shrimp',
-    'moules':'mussels','saint-jacques':'scallops',
-    'pâtes':'pasta','riz':'rice','pain':'bread','farine':'flour',
-    'pomme de terre':'potato','patate douce':'sweet potato',
-    'tomate':'tomato','carotte':'carrot','courgette':'zucchini',
-    'aubergine':'eggplant','oignon':'onion','ail':'garlic',
-    'épinards':'spinach','brocolis':'broccoli','chou-fleur':'cauliflower',
-    'champignon':'mushroom','poivron':'pepper','concombre':'cucumber',
-    'salade':'salad','soupe':'soup','gratin':'gratin','tarte':'tart',
-    'rôti':'roast','grillé':'grilled','sauté':'sauteed','vapeur':'steamed',
-    'végétarien':'vegetarian','vegan':'vegan','sans gluten':'gluten free',
-    'poisson':'fish','viande':'meat','légumes':'vegetables','fruits':'fruits',
-    'rapide':'quick','facile':'easy','sain':'healthy','maison':'homemade',
-    'chocolat':'chocolate','fromage':'cheese','beurre':'butter','crème':'cream',
-    'quinoa':'quinoa','lentilles':'lentils','pois chiches':'chickpeas',
-    'avocats':'avocado','banane':'banana','pomme':'apple','citron':'lemon',
-    'curry':'curry','tajine':'tagine','risotto':'risotto','paella':'paella',
-    'quiche':'quiche','crêpe':'crepe','mousse':'mousse','gâteau':'cake',
-    'soupe de légumes':'vegetable soup','poulet rôti':'roasted chicken',
-    'steak':'steak','escalope':'escalope','filet':'fillet',
-    'lasagne':'lasagna','lasagnes':'lasagna','gratin dauphinois':'gratin',
-    'boeuf bourguignon':'beef bourguignon','blanquette':'white stew',
-    'cassoulet':'cassoulet','ratatouille':'ratatouille',
-    'tartiflette':'tartiflette','raclette':'raclette',
-    'clafoutis':'clafoutis','tarte tatin':'tarte tatin',
-    'croissant':'croissant','brioche':'brioche','baguette':'bread',
-    'velouté':'soup','bourride':'fish stew','daube':'beef stew',
-    'gigot':'lamb leg','côtelette':'chop','magret':'duck breast',
-    'cabillaud':'cod fish','lotte':'monkfish','daurade':'sea bream',
-    'endive':'endive','poireau':'leek','navet':'turnip','artichaut':'artichoke',
-    'fraise':'strawberry','framboise':'raspberry','abricot':'apricot',
-    'cerise':'cherry','poire':'pear','pêche':'peach','prune':'plum',
-  };
-  // If no translation found, keep original (some French names work in English)
-  let translated = query.toLowerCase();
-  const entries = Object.entries(frToEn).sort((a,b) => b[0].length - a[0].length);
-  entries.forEach(([fr, en]) => {
-    const regex = new RegExp('\\b' + fr.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b','gi');
-    translated = translated.replace(regex, en);
-  });
-  return translated.charAt(0).toUpperCase() + translated.slice(1);
-}
-
-
-function switchExplTab(t) {
-  // Jow est desormais la seule source
-  window._explTab = 'jow';
-  const jowPanel = document.getElementById('jowPanel');
-  if(jowPanel) jowPanel.style.display = 'block';
-  const inp = document.getElementById('spoonSearchInp');
-  if(inp) inp.value = '';
-  const dflt = document.getElementById('jowDefault');
-  const res  = document.getElementById('jowResults');
-  if(dflt) dflt.style.display = 'block';
-  if(res)  res.innerHTML = '';
-}
-
-async function searchSpoonacularQuery(q) {
-  const inp = document.getElementById('spoonSearchInp');
-  if(inp) inp.value = q;
-  searchSpoonacular(q);
-}
-
-
 // ─────────────────────────────────────────────────────
 // EXPLORER — fonctions unifiées
 // ─────────────────────────────────────────────────────
 function explorerSearch() {
-  const q       = (document.getElementById('spoonSearchInp')?.value || '').trim();
-  const cuisine = (document.getElementById('explorerCuisine')?.value || '').trim();
-  const combined = [cuisine, q].filter(Boolean).join(' ');
-  if(!combined) return;
-  searchJow(combined);
+  const q = (document.getElementById('spoonSearchInp').value||'').trim();
+  if(!q) return;
+  searchJow(q);
 }
 
 // Map of shortcut queries → better Jow search terms
@@ -4888,11 +4497,6 @@ function _jowSaveRecipe(recipe) {
 function _jowGetRecipe(id) {
   return _jowDB()[id] || null;
 }
-function _jowAllRecipes() {
-  const db = _jowDB();
-  return Object.values(db).sort(function(a,b){ return (b._savedAt||0)-(a._savedAt||0); });
-}
-
 // ── helpers visuels ──────────────────────────────────────────────
 const _NS_COLORS = {A:'#038141',B:'#85BB2F',C:'#FECB02',D:'#EE8100',E:'#E63E11'};
 const _GS_COLORS = {'A+':'#1a7a1a',A:'#038141',B:'#85BB2F',C:'#FECB02',D:'#EE8100',E:'#E63E11',F:'#b22222'};
@@ -4975,7 +4579,7 @@ function _jowNormalize(r) {
   // Primary = imageUrl (always works), PNG candidates tried via onerror
   const primaryPhoto = r.pngUrl || r.imageUrl || photoCandidates[0] || null;
   return {
-    id:             'jow_' + (r.id || r.i || (r.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,40) + '_' + Math.random().toString(36).slice(2,6)),
+    id:             'jow_' + (r.id || r.i || ''),
     name:           r.name   || '',
     description:    r.description || '',
     photo:          primaryPhoto,
@@ -5041,7 +4645,7 @@ async function searchJow(query, retries) {
       q = _JOW_QUERY_MAP[q.toLowerCase()];
     }
     const params = new URLSearchParams({ q, limit: '12' });
-    const resp = await fetch('/api/jow?' + params);
+    const resp = await fetch(API_BASE + '/api/jow?' + params);
     if(!resp.ok) {
       const err = await resp.json().catch(function(){ return {}; });
       throw new Error(err.error || 'Erreur serveur ' + resp.status);
@@ -5095,17 +4699,8 @@ function _renderJowResults(rawList, query) {
     return recipe;
   });
 
-  console.log('[Jow] Recherche "' + query + '" → ' + normalized.length + ' résultats. Cache total: ' + Object.keys(window._jowCache).length);
-
-  // Rafraîchir immédiatement le compteur "Mes recettes" (le cache mémoire est déjà à jour)
-  if(typeof renderRecipesGrid === 'function') {
-    try { renderRecipesGrid(); } catch(_) {}
-  }
-
   // UN SEUL batch pour toute la recherche (au lieu d'un appel par recette)
-  saveToGlobalDB(normalized).then(added => {
-    console.log('[Jow] saveToGlobalDB terminé — ' + added + ' nouvelles recettes ajoutées au cache');
-  }).catch(e => console.error('[Jow] saveToGlobalDB erreur:', e));
+  saveToGlobalDB(normalized).catch(() => {});
 
   const cards = normalized.map(function(recipe) {
     const habits  = recipe.eatingHabits || {};
@@ -5138,30 +4733,8 @@ function _renderJowResults(rawList, query) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  BOOKMARK
+//  BOOKMARK (voir toggleBookmark / _jowToggleBookmark plus haut)
 // ═══════════════════════════════════════════════════════════════════
-function _jowToggleBookmark(id) {
-  const recipe = window._jowCache && window._jowCache[id];
-  if(!recipe) return;
-  if(!state.recipeBookmarks) state.recipeBookmarks = [];
-  const idx = state.recipeBookmarks.findIndex(function(b){ return b.id===id; });
-  if(idx >= 0) {
-    state.recipeBookmarks.splice(idx, 1);
-    showToast('☆','Retiré','Favori supprimé');
-  } else {
-    state.recipeBookmarks.push(recipe);
-    _jowSaveRecipe(recipe); // persistance locale
-    saveToGlobalDB([recipe]).catch(function(){}); // persistance Firestore partagee
-    showToast('⭐','Favori ajouté','Recette sauvegardée et partagée !');
-  }
-  saveState();
-  // Mettre à jour le bouton dans la grille
-  const btn = document.getElementById('jbm_'+id);
-  if(btn) btn.textContent = idx>=0 ? '☆' : '⭐';
-  // Mettre à jour le bouton dans le modal si ouvert
-  const modalBm = document.getElementById('jowModalBm');
-  if(modalBm) modalBm.textContent = idx>=0 ? '☆' : '⭐';
-}
 
 // ═══════════════════════════════════════════════════════════════════
 //  OPEN MODAL
@@ -5480,7 +5053,7 @@ async function searchWithClaude(query) {
     + '"recipes":[{"name":"string","emoji":"string","time":30,"portions":4,"kcal":450,"prot":25,"carb":40,"fat":15,"description":"string","ingredients":[{"name":"string","qty":"100","unit":"g"}],"instructions":["Étape 1","Étape 2","Étape 3"]}]}\n'
     + "Génère exactement 4 recettes dans ce format.";
   try {
-    const resp = await fetch("/api/claude", {
+    const resp = await fetch(API_BASE + "/api/claude", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -5594,27 +5167,6 @@ const AREA_TRANSLATIONS = {
   'Tunisian':'Tunisienne','Turkish':'Turque','Ukrainian':'Ukrainienne','Unknown':'Inconnue',
   'Vietnamese':'Vietnamienne','Lebanese':'Libanaise','Peruvian':'Péruvienne',
 };
-function _translateAreaToFr(area) {
-  if(!area) return '';
-  return AREA_TRANSLATIONS[area] || area;
-}
-
-// _autoTranslateMealDBBatch removed (TheMealDB cleanup)
-async function _autoTranslateMealDBBatch() {}
-function _applyMDBTranslation(recipeId, translated) {
-  const nameEl = document.getElementById('mdbname_' + recipeId);
-  if(nameEl && translated.name) nameEl.textContent = translated.name;
-  const bodyEl = document.getElementById('mdbbody_' + recipeId);
-  if(bodyEl && (translated.category || translated.area)) {
-    const meta = bodyEl.querySelector('.spoon-recipe-meta');
-    if(meta) meta.innerHTML = (translated.category?'<span>🍽️ '+translated.category+'</span>':'')
-      + (translated.area?'<span>🌍 '+translated.area+'</span>':'')
-      + '<span>⏱ ~30min</span><span style="color:var(--gn);font-size:.6rem;">🇫🇷 ✓</span>';
-  }
-  // Remove per-card translation badge
-  const badge = document.getElementById('mdgtrans_' + recipeId);
-  if(badge) badge.remove();
-}
 // ═══════════════════════════════════════════════════════════
 // 🗃️ BASE DE DONNÉES RECETTES GLOBALE (partagée entre utilisateurs)
 // Stockée dans localStorage avec clé partagée sc_global_recipes
@@ -5660,26 +5212,6 @@ function estimateRecipeCost(recipe) {
     perPortion: Math.round(total / (recipe.portions || 4) * 100) / 100,
   };
 }
-
-function getWeekBudgetEstimate() {
-  const allRec = getAllRecipes();
-  let totalCost = 0;
-  let mealCount = 0;
-  Object.values(state.weekMenu).forEach(day => {
-    if(!day) return;
-    ['b','l','d','snack'].forEach(slot => {
-      if(!day[slot]) return;
-      const mealName = day[slot].replace(/^[^\w]+/, '').trim().toLowerCase();
-      const recipe = allRec.find(r => r.name.toLowerCase().includes(mealName.split(' ')[0]) || mealName.includes(r.name.toLowerCase().split(' ')[0]));
-      if(recipe) {
-        const cost = estimateRecipeCost(recipe);
-        if(cost) { totalCost += cost.perPortion; mealCount++; }
-      }
-    });
-  });
-  return mealCount > 0 ? {total: Math.round(totalCost*100)/100, meals: mealCount} : null;
-}
-
 
 // ═══════════════════════════════════════════════════════════
 // 📤 PARTAGE LISTE DE COURSES
@@ -5885,51 +5417,8 @@ function startVoiceInput(targetInputId, onResultCallback) {
   _speechRecognition.start();
 }
 
-function stopVoiceInput() {
-  if(_speechRecognition) { _speechRecognition.abort(); _speechRecognition = null; }
-}
-
 // Quick add fridge item by voice
-function voiceAddFridgeItem() {
-  const tmpId = 'voiceFridgeTmp';
-  let tmp = document.getElementById(tmpId);
-  if(!tmp) {
-    tmp = document.createElement('input');
-    tmp.id = tmpId;
-    tmp.style.display = 'none';
-    document.body.appendChild(tmp);
-  }
-  startVoiceInput(tmpId, text => {
-    // Parse "add X" / "ajoute X" / just "X"
-    const name = text.replace(/^(ajoute?r?|add|met[sz]?)\s+/i, '').trim();
-    if(name) {
-      document.getElementById('fridgeInput').value = name;
-      addFridgeItem();
-    }
-  });
-}
-
 // Quick add shopping list item by voice
-function voiceAddListItem() {
-  const tmpId = 'voiceListTmp';
-  let tmp = document.getElementById(tmpId);
-  if(!tmp) { tmp = document.createElement('input'); tmp.id=tmpId; tmp.style.display='none'; document.body.appendChild(tmp); }
-  startVoiceInput(tmpId, text => {
-    const name = text.replace(/^(ajoute?r?|add|met[sz]?)\s+/i, '').trim();
-    if(name) {
-      // Try to find product
-      const p = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []).find(pr => pr.name.toLowerCase().includes(name.toLowerCase()));
-      if(p) { addItemByName(p.name); showToast('✅', p.emoji + ' ' + p.name, 'Ajouté par la voix'); }
-      else {
-        state.items.unshift({id:'i'+Date.now(),name,emoji:'🛒',cat:'🍝 Épicerie',price:0,qty:1,checked:false,addedAt:Date.now()});
-        saveItems(); renderList();
-        showToast('✅', '🛒 ' + name, 'Ajouté par la voix');
-      }
-    }
-  });
-}
-
-
 // ═══════════════════════════════════════════════════════════
 // 🎓 ONBOARDING
 // ═══════════════════════════════════════════════════════════
@@ -6034,11 +5523,6 @@ function isPremium() {
   return true;
 }
 
-function requirePremium(featureName, callback) {
-  if(isPremium()) { callback(); return; }
-  openPremiumModal(featureName);
-}
-
 function openPremiumModal(featureName) {
   const existing = document.getElementById('premiumModal');
   if(existing) existing.remove();
@@ -6135,51 +5619,10 @@ function restorePremium() {
   else { showToast('ℹ️','Aucun achat trouvé','Aucun abonnement pour ce compte'); }
 }
 
-function getPremiumBadge() {
-  if(!isPremium()) return '';
-  const p = state.premium;
-  const d = p.expiresAt ? Math.ceil((p.expiresAt-Date.now())/(24*3600*1000)) : null;
-  const label = p.trial ? ('⭐ ESSAI' + (d ? ' · ' + d + 'j' : '')) : '⭐ PREMIUM';
-  return '<span style="font-size:.6rem;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;padding:2px 8px;border-radius:99px;font-weight:900;margin-left:5px;">' + label + '</span>';
-}
-
-
 // ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
 // 📸 RECONNAISSANCE PHOTO FRIGO — Gemini Vision
 // ═══════════════════════════════════════════════════════════
-
-function showFridgeScanResults(items) {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;';
-
-  const selected = new Set(items.map((_, i) => i)); // all selected by default
-
-  const renderList = () => {
-    overlay.querySelector('#scanItemsList').innerHTML = items.map((it, i) =>
-      '<div id="scanRow_'+i+'" onclick="document.getElementById(\'scanRow_'+i+'\').classList.toggle(\'scan-off\');window._scanSelected.has('+i+')?window._scanSelected.delete('+i+'):window._scanSelected.add('+i+')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;transition:opacity .15s;">'
-        + '<div style="font-size:1.5rem;">' + (it.emoji||'🥗') + '</div>'
-        + '<div style="flex:1;"><div style="font-weight:800;font-size:.85rem;">' + it.name + '</div>'
-        + '<div style="font-size:.68rem;color:var(--tx2);">' + (it.qty||'') + '</div></div>'
-        + '<div style="width:20px;height:20px;border-radius:6px;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#fff;font-weight:900;">✓</div>'
-        + '</div>'
-    ).join('');
-    window._scanSelected = selected;
-  };
-
-  overlay.innerHTML = '<div style="background:var(--bg);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;">'
-    + '<div style="width:36px;height:4px;background:var(--bg2);border-radius:2px;margin:0 auto 16px;"></div>'
-    + '<div style="font-weight:900;font-size:.95rem;margin-bottom:4px;">📸 ' + items.length + ' aliments détectés</div>'
-    + '<div style="font-size:.72rem;color:var(--tx2);margin-bottom:14px;">Sélectionnez ceux à ajouter à votre frigo</div>'
-    + '<div id="scanItemsList"></div>'
-    + '<button onclick="confirmScanItems()" class="btn acc" style="width:100%;padding:13px;margin-top:12px;border-radius:14px;font-weight:800;">✅ Ajouter au frigo</button>'
-    + '<button onclick="this.closest(\'[style*=fixed]\').remove()" class="btn" style="width:100%;padding:11px;margin-top:6px;border-radius:14px;">Annuler</button>'
-    + '</div>';
-  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
-  window._scanItems = items;
-  document.body.appendChild(overlay);
-  renderList();
-}
 
 function confirmScanItems() {
   const items = window._scanItems || [];
@@ -6545,8 +5988,9 @@ function openStripeCheckout(plan) {
 // ══ BASE DE DONNÉES RECETTES ══════════════════════════════════════
 // Source de vérité = Firestore collection "recipes" (illimitée, partagée
 // entre tous les utilisateurs). _jowCache = cache mémoire de session.
-// localStorage N'EST PLUS UTILISÉ pour stocker les recettes (le quota
-// 5MB plafonnait la base à ~250-300 recettes).
+// localStorage N'EST PLUS UTILISÉ pour stocker les recettes — c'est ce
+// qui plafonnait la base à ~250-300 recettes (quota 5MB dépassé
+// silencieusement).
 
 function getGlobalRecipeDB() {
   if(!window._jowCache) return [];
@@ -6586,15 +6030,12 @@ async function saveToGlobalDB(recipes) {
         }
         if(n > 0) {
           await batch.commit();
-          console.log('[DB] ✅ Batch Firestore commité: ' + n + ' recettes');
           if(typeof renderRecipesGrid === 'function') {
             setTimeout(() => { try { renderRecipesGrid(); } catch(_) {} }, 300);
           }
         }
-      } catch(e) { console.error('[DB] ❌ Batch Firestore échoué:', e.code || e.message, e); }
+      } catch(e) { console.warn('[DB]', e.code || e.message); }
     })();
-  } else {
-    console.warn('[DB] ⚠️ Sauvegarde Firestore ignorée — db:', typeof db !== 'undefined' && !!db, 'currentUser:', typeof currentUser !== 'undefined' && !!currentUser);
   }
 
   return added;
@@ -6654,6 +6095,7 @@ async function syncGlobalRecipesFromFirestore() {
 
 function _invalidateRecipesCache() { _recipesLoaded = false; _recipesLoading = false; }
 
+
 function getRecipesMatchingFridge(fridgeNames) {
   // Combine all recipe sources (deduplicated)
   const globalDB = getGlobalRecipeDB();
@@ -6698,10 +6140,6 @@ function getRecipesMatchingFridge(fridgeNames) {
 
 
 // ══ TheMealDB Explorer — fallback si Claude indisponible ══
-// searchMealDBExplorer removed (TheMealDB cleanup)
-async function searchMealDBExplorer() {}
-// openMealDBRecipeDetail removed (TheMealDB cleanup)
-function openMealDBRecipeDetail() {}
 function openClaudeRecipe(id) {
   const recipe = Object.values(state.spoonCache).flat().find(r => r.id === id)
     || state.recipeBookmarks.find(r => r.id === id);
@@ -6933,84 +6371,6 @@ function translateInstruction(text) {
   });
   return t;
 }
-
-
-function adjustPortions(n) {
-  // Update the displayed quantities and kcal
-  const allButtons = document.querySelectorAll('[id^=portionBtn]');
-  allButtons.forEach(btn => btn.classList.toggle('acc', btn.id === 'portionBtn'+n));
-  const display = document.getElementById('portionKcalDisplay');
-  // Recalculate if base kcal known
-  const baseKcal = window._currentSpoonKcal;
-  const basePortions = window._currentSpoonPortions || 4;
-  if(baseKcal && display) {
-    display.textContent = '~' + Math.round(baseKcal * basePortions / n) + ' kcal/p.';
-  }
-}
-
-
-function mealEditAC(q) {
-  if(!q || q.length < 2) return;
-  const all = getAllRecipes();
-  const matches = all.filter(r => r.name.toLowerCase().includes(q.toLowerCase())).slice(0, 5);
-  if(!matches.length) return;
-  // Show as quick picks above the input
-  const inp = document.getElementById('mealEditInput');
-  if(!inp) return;
-  let acEl = document.getElementById('mealInputAC');
-  if(!acEl) {
-    acEl = document.createElement('div');
-    acEl.id = 'mealInputAC';
-    acEl.style.cssText = 'margin-bottom:6px;display:flex;flex-direction:column;gap:4px;';
-    inp.parentElement?.insertAdjacentElement('afterend', acEl);
-  }
-  acEl.innerHTML = matches.map(r=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(108,92,231,.08);border-radius:var(--rs);cursor:pointer;font-size:.8rem;border:1px solid rgba(108,92,231,.15);"
-      onclick="document.getElementById('mealEditInput').value='${(r.emoji||'🍽️')+' '+r.name}';document.getElementById('mealInputAC').innerHTML='';">
-      <span>${r.emoji||'🍽️'}</span><span style="font-weight:700;">${r.name}</span>
-      ${r.kcal?'<span style="margin-left:auto;font-size:.65rem;color:var(--tx3);">🔥'+r.kcal+'</span>':''}
-    </div>`).join('');
-}
-
-function bfSearchItem(q) {
-  const ac = document.getElementById('bfItemAC');
-  if(!ac||!q||q.length<2) { if(ac) ac.style.display='none'; return; }
-  const matches = PRODUCTS.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())).slice(0,6);
-  if(!matches.length) { ac.style.display='none'; return; }
-  ac.style.display = 'block';
-  ac.innerHTML = matches.map(p=>`
-    <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bg2);font-size:.8rem;display:flex;align-items:center;gap:8px;"
-      onclick="document.getElementById('bfItemInput').value='${p.name.replace(/'/g,"\'")}';document.getElementById('bfItemAC').style.display='none'">
-      <span>${p.emoji||'🛍️'}</span><span style="font-weight:700;">${p.name}</span>
-    </div>`).join('');
-}
-
-async function bfAddItem() {
-  const inp = document.getElementById('bfItemInput');
-  const name = inp?.value?.trim();
-  if(!name) return;
-  const product = PRODUCTS.find(p=>p.name.toLowerCase()===name.toLowerCase())||{name,emoji:'🛍️',cat:'🛒 Autre',price:0};
-  state.items.unshift({id:Date.now()+Math.random()+'',name:product.name,emoji:product.emoji||'🛍️',cat:product.cat||'🛒 Autre',price:product.price||0,qty:'1',checked:false,addedBy:'Petit-déjeuner'});
-  await saveState();
-  renderList?.();
-  inp.value = '';
-  document.getElementById('bfItemAC').style.display = 'none';
-  showToast('🛒', product.name, 'Ajouté à la liste de courses !');
-}
-
-function saveBf(day) {
-  const val = document.getElementById('bfInput')?.value?.trim();
-  if(!state.weekMenu[day]) state.weekMenu[day] = {};
-  state.weekMenu[day].b = val || '';
-  delete state.weekMenu[day].bData;
-  saveWeekMenu();
-  renderWeek();
-  renderDayDetail();
-  document.getElementById('breakfastModal')?.remove();
-  if(val) showToast('✅','Petit-déjeuner','Menu du matin mis à jour !');
-}
-
-
 
 
 // ── Week constants ────────────────────────────────────────────
@@ -7359,81 +6719,6 @@ function applyAIMenuResult(data) {
 
 
 
-function applyDemoMenu(diet) {
-  const demos={
-    omnivore:[
-      {b:'☕ Café + toast avocat œuf poché',l:'🥗 Salade César poulet parmesan',d:'🍝 Spaghetti bolognaise maison',sn:'🍎 Pomme + amandes',kcal:1820,prot:98,carb:195,fat:62,q:'good',tip:'Journée idéalement équilibrée'},
-      {b:'🥣 Porridge avoine banane miel',l:'🍱 Bowl saumon quinoa avocat',d:'🍛 Curry de poulet lait de coco',sn:'🍶 Yaourt grec myrtilles',kcal:1890,prot:92,carb:205,fat:60,q:'good',tip:'Riche en oméga-3'},
-      {b:'🍳 Omelette 3 œufs tomates',l:'🥙 Wrap poulet légumes grillés',d:'🥘 Ratatouille riz basmati',sn:'🫐 Myrtilles + noix cajou',kcal:1750,prot:85,carb:180,fat:58,q:'ok',tip:'Bonne journée végétale'},
-      {b:'🥐 Croissant + jus orange pressé',l:'🍲 Soupe lentilles corail naan',d:'🥩 Steak haché purée maison',sn:'🧀 Fromage blanc',kcal:1950,prot:95,carb:215,fat:65,q:'ok',tip:'Attention glucides élevés'},
-      {b:'🫐 Smoothie bowl acaï granola',l:'🍜 Ramen légumes œuf mollet',d:'🍕 Pizza maison mozza roquette',sn:'🥜 Beurre cacahuète galette riz',kcal:1980,prot:78,carb:245,fat:72,q:'warn',tip:'Plaisir du vendredi !'},
-      {b:'🥞 Pancakes complets sirop érable',l:'🥗 Salade niçoise thon',d:'🦐 Crevettes sautées riz cantonais',sn:'🍊 Oranges',kcal:1860,prot:88,carb:210,fat:62,q:'good',tip:'Fruits de mer bénéfiques'},
-      {b:'🍞 Toast avocat tomates cerises',l:'🥘 Couscous royal traditionnel',d:'🍗 Rôti de poulet légumes rôtis',sn:'🍫 Carré chocolat noir 70%',kcal:1920,prot:96,carb:200,fat:65,q:'good',tip:'Dimanche en famille 🏡'},
-    ],
-    veg:[
-      {b:'🥣 Granola lait végétal fruits',l:'🥗 Salade quinoa feta grenade',d:'🍄 Risotto champignons parmesan',sn:'🍎 Pomme amandes',kcal:1780,prot:72,carb:205,fat:62,q:'good'},
-      {b:'🍳 Omelette épinards chèvre',l:'🧆 Falafel houmous pita',d:'🥘 Curry tofu patate douce',sn:'🍶 Yaourt grec miel',kcal:1840,prot:68,carb:215,fat:60,q:'good'},
-      {b:'🫐 Smoothie épinards banane',l:'🍝 Pâtes pesto basilic parmesan',d:'🥗 Salade de lentilles beluga',sn:'🌰 Dattes amandes',kcal:1720,prot:65,carb:198,fat:55,q:'ok'},
-      {b:'🥐 Tartine beurre confiture bio',l:'🌮 Tacos haricots noirs guac',d:'🍆 Moussaka végétarienne',sn:'🧀 Fromage blanc',kcal:1860,prot:70,carb:220,fat:62,q:'ok'},
-      {b:'🥞 Pancakes myrtilles érable',l:'🍜 Soupe miso tofu wakamé',d:'🫑 Ratatouille riz complet',sn:'🍫 Chocolat noir noix',kcal:1790,prot:62,carb:210,fat:58,q:'ok'},
-      {b:'🍓 Açaï bowl granola',l:'🥗 Salade betterave chèvre noix',d:'🍕 Pizza végétarienne mozzarella',sn:'🍊 Mandarine',kcal:1880,prot:68,carb:225,fat:65,q:'warn'},
-      {b:'🍞 Toast avocat œuf bio',l:'🥘 Dhal lentilles corail naan',d:'🥦 Gratin brocoli comté',sn:'🫐 Myrtilles',kcal:1820,prot:75,carb:205,fat:60,q:'good'},
-    ],
-    vegan:[
-      {b:'🫐 Smoothie bowl spiruline',l:'🥗 Buddha bowl houmous',d:'🍛 Dal lentilles corail',sn:'🌰 Noix mélangées',kcal:1750,prot:68,carb:210,fat:58,q:'good'},
-      {b:'🥣 Porridge lait coco chia',l:'🧆 Falafel taboulé pita',d:'🥕 Curry légumes coco',sn:'🍌 Banane beurre amande',kcal:1820,prot:62,carb:225,fat:60,q:'good'},
-      {b:'🍞 Toast avocat tomates',l:'🍝 Pâtes tomate basilic',d:'🥘 Wok tofu légumes',sn:'🍎 Pomme',kcal:1680,prot:58,carb:215,fat:52,q:'ok'},
-    ],
-    pesc:[
-      {b:'☕ Café toast sardines avocat',l:'🐟 Salade niçoise thon',d:'🦐 Crevettes sautées riz',sn:'🍊 Orange',kcal:1820,prot:95,carb:185,fat:60,q:'good'},
-      {b:'🥣 Porridge miel fruits',l:'🍱 Bowl saumon quinoa',d:'🐟 Cabillaud vapeur légumes',sn:'🫐 Myrtilles',kcal:1780,prot:88,carb:190,fat:58,q:'good'},
-      {b:'🍳 Omelette saumon fumé',l:'🥗 Salade César saumon',d:'🦐 Gambas thaïlandaises',sn:'🍶 Yaourt',kcal:1850,prot:98,carb:180,fat:65,q:'good'},
-    ],
-    keto:[
-      {b:'🍳 Œufs brouillés bacon avocat',l:'🥗 Salade saumon avocat œuf',d:'🥩 Entrecôte haricots beurre',sn:'🧀 Gouda',kcal:1750,prot:108,carb:22,fat:138,q:'good'},
-      {b:'☕ Café bulletproof œufs',l:'🐟 Saumon crème épinards',d:'🍗 Poulet parmesan courgettes',sn:'🌰 Noix macadamia',kcal:1820,prot:102,carb:20,fat:145,q:'good'},
-      {b:'🥚 Omelette fromage épinards',l:'🥗 Salade César (sans croutons)',d:'🥩 Steak haché salade',sn:'🥑 Avocat citron',kcal:1700,prot:98,carb:18,fat:132,q:'ok'},
-    ],
-    gluten:[
-      {b:'🥣 Flocons de riz lait fruits',l:'🥗 Salade riz poulet avocat',d:'🥔 Gratin quinoa légumes',sn:'🍎 Pomme noix',kcal:1780,prot:82,carb:195,fat:62,q:'good'},
-      {b:'🍳 Omelette jambon fromage',l:'🍛 Curry riz saumon',d:'🥩 Steak légumes vapeur',sn:'🍶 Yaourt grec',kcal:1820,prot:95,carb:185,fat:65,q:'good'},
-      {b:'🫐 Smoothie bowl chia',l:'🥗 Salade lentilles thon',d:'🐟 Pavé saumon riz pilaf',sn:'🌰 Amandes dattes',kcal:1750,prot:88,carb:200,fat:58,q:'good'},
-    ]
-  };
-  const pool = demos[diet]||demos.omnivore;
-  const todayNum = new Date().getDay() || 7; // 1=Lun … 7=Dim
-  pool.forEach((d,i) => {
-    const dn = i + 1;
-    if(dn < todayNum) return; // ne touche pas aux jours passés
-    if(!state.weekMenu[dn]) state.weekMenu[dn] = {};
-    // Uniquement déjeuner et dîner — le petit-déj et la collation restent libres
-    state.weekMenu[dn].l = d.l;
-    state.weekMenu[dn].d = d.d;
-    state.weekMenu[dn].nutri = {kcal:Math.round((d.kcal||0)*0.65), prot:Math.round((d.prot||0)*0.65), carb:Math.round((d.carb||0)*0.65), fat:Math.round((d.fat||0)*0.65)};
-    state.weekMenu[dn].quality = d.q || 'ok';
-    state.weekMenu[dn].tip = d.tip || '';
-  });
-  // Complète les jours restants si le pool est plus court que la semaine
-  for(let i = pool.length; i < 7; i++) {
-    const dn = i + 1;
-    if(dn < todayNum) continue;
-    if(!state.weekMenu[dn]) state.weekMenu[dn] = {};
-    const src = pool[i % pool.length];
-    state.weekMenu[dn].l = src.l;
-    state.weekMenu[dn].d = src.d;
-    state.weekMenu[dn].quality = src.q || 'ok';
-  }
-  saveWeekMenu(); renderWeek(); renderDayDetail();
-  const zone=document.getElementById('aiMenuResultZone');
-  if(zone) zone.innerHTML=`<div class="ai-menu-result" style="background:linear-gradient(135deg,rgba(255,107,107,.06),rgba(255,142,83,.04));border:1px solid rgba(255,107,107,.15);">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-size:1.2rem;">📋</span>
-      <div><div style="font-weight:900;font-size:.88rem;">Menu démonstration</div>
-      <div style="font-size:.7rem;color:var(--tx2);">Configurez votre clé API Claude pour un menu IA personnalisé</div></div>
-    </div>
-  </div>`;
-}
-
 // ── Semaine ─────────────────────────────────────────────────
 
 
@@ -7583,39 +6868,6 @@ function meRecipeItem(r, day, slot) {
   el.innerHTML = '<span class="meal-pick-em">' + (r.emoji||"🍽️") + '</span>'    + '<div style="flex:1;min-width:0;"><div class="meal-pick-name">' + r.name + badge + "</div>"    + (meta ? '<div style="font-size:.62rem;color:var(--tx3);">' + meta + "</div>" : "") + "</div>";
   return el.outerHTML;
 }
-
-function switchMeTab(tab) {
-  ['recipes','search','free'].forEach(t => {
-    const btn = document.getElementById('metab-'+t);
-    const panel = document.getElementById('mepanel-'+t);
-    if(btn) { btn.classList.toggle('acc', t===tab); btn.classList.toggle('ghost', t!==tab); }
-    if(panel) panel.style.display = t===tab ? 'block' : 'none';
-  });
-  if(tab==='search') setTimeout(()=>document.getElementById('omeJowSearch')?.focus(), 100);
-  if(tab==='free')   setTimeout(()=>document.getElementById('mealFreeInput')?.focus(), 100);
-  if(tab==='recipes') setTimeout(()=>document.getElementById('meRecipeSearch')?.focus(), 100);
-}
-
-function meLiveSearch(q, day, slot) {
-  const el = document.getElementById('meRecipeList');
-  if(!el) return;
-  const all = getAllRecipes().filter(r => !r.mealTypes || r.mealTypes.includes(slot));
-  const filtered = q ? all.filter(r => r.name.toLowerCase().includes(q.toLowerCase())) : all;
-  el.innerHTML = filtered.slice(0,30).map(r => meRecipeItem(r, day, slot)).join('')
-    || '<div style="text-align:center;padding:14px;color:var(--tx3);font-size:.8rem;">Aucune recette</div>';
-}
-
-async function searchMealDB(day, slot) {
-  // Replaced: now delegates to Jow search
-  openMealEdit(day, slot);
-}
-
-
-async function selectMealDBForSlot(id, frName, day, slot) {
-  // Replaced: TheMealDB removed, using Jow
-  showToast('ℹ️', 'Info', 'Utilisez la recherche Jow pour sélectionner une recette.');
-}
-
 
 // ════════════════════════════════════════════════════════════
 // 🍎 COLLATION — autocomplete snackAC
@@ -8023,16 +7275,6 @@ function openCreateRecipeModal(editRecipe) {
 }
 
 // ── Création recette : helpers ──────────────────────────────
-function crDeletePhoto() {
-  window._crPhotoData = null;
-  const prev = document.getElementById('crPhotoPreview');
-  if(prev) { prev.style.border = '2px dashed var(--bg2)'; prev.innerHTML = '📷'; }
-  const delBtn = document.getElementById('crPhotoDelBtn');
-  if(delBtn) delBtn.style.display = 'none';
-  const fileInp = document.getElementById('crPhotoFile');
-  if(fileInp) fileInp.value = '';
-}
-
 function crSearchIngr(q) {
   const ac = document.getElementById('crIngrAC');
   if(!ac) return;
@@ -8304,12 +7546,6 @@ function showApiKeyBanner() {
 }
 
 // Check on load if key works
-function checkApiKeyOnLoad() {
-  const saved = localStorage.getItem('sc_anthropic_key');
-  if(saved) return; // user has set a key
-  // Show banner proactively (key might be revoked)
-}
-
 function openMealEdit(day, slot) {
   if(slot === 'b') { openBreakfastBuilder(day); return; }
   if(slot === 'snack') { openSnackBuilder(day); return; }
@@ -8464,7 +7700,7 @@ async function omeSearchJow(day, slot) {
   if(res) res.innerHTML = '<div style="padding:10px;text-align:center;color:var(--tx2);font-size:.75rem;"><div class="ai-loading-spinner" style="margin:0 auto 8px;"></div>Recherche Jow…</div>';
   try {
     const params = new URLSearchParams({ q, limit: '8' });
-    const resp = await fetch('/api/jow?' + params);
+    const resp = await fetch(API_BASE + '/api/jow?' + params);
     if(!resp.ok) throw new Error('Erreur ' + resp.status);
     const data = await resp.json();
     const recipes = (data.recipes || []).map(_jowNormalize);
@@ -8521,21 +7757,6 @@ async function omeSelectJow(recipe, day, slot) {
 }
 
 // Alias for backward compat
-async function omeSearchMealDB(day, slot) { omeSearchJow(day, slot); }
-
-
-function omeSaveFree(day, slot) {
-  const val = document.getElementById('omeFreeInput')?.value?.trim();
-  if(!val) return;
-  if(!state.weekMenu[day]) state.weekMenu[day] = {};
-  state.weekMenu[day][slot] = val;
-  delete state.weekMenu[day][slot+'Data']; // évite qu'une ancienne photo/recette reste affichée
-  saveWeekMenu(); renderWeek && renderWeek(); renderDayDetail && renderDayDetail();
-  closeMealEdit();
-  showToast('✅', val, 'Menu mis à jour !');
-}
-
-
 function renderMealRecipePicks(recipes, day, slot, query) {
   // Filter by slot meal type + query
   const q = query.toLowerCase();
@@ -8571,29 +7792,6 @@ function renderMealRecipePicks(recipes, day, slot, query) {
       </div>
     </div>`;
   }).join('');
-}
-
-function filterMealRecipes(q, day, slot) {
-  const el = document.getElementById('mealRecipeList');
-  if(!el) return;
-  const allRec = getAllRecipes();
-  el.innerHTML = renderMealRecipePicks(allRec, day, slot, q);
-  // Also update free input with search value
-  const fi = document.getElementById('mealFreeInput');
-  if(fi && q) fi.value = q;
-}
-
-function saveMealFree(day, slot) {
-  const val = document.getElementById('mealFreeInput')?.value?.trim();
-  if(!val) return;
-  if(!state.weekMenu[day]) state.weekMenu[day] = {};
-  state.weekMenu[day][slot] = val;
-  delete state.weekMenu[day][slot+'Data']; // évite qu'une ancienne photo/recette reste affichée
-  saveWeekMenu();
-  renderWeek();
-  renderDayDetail();
-  closeMealEdit();
-  showToast('✅', val, 'Menu mis à jour !');
 }
 
 // ══ SNACK BUILDER — multiple items, no suggestions ══
@@ -8652,16 +7850,6 @@ function openSnackBuilder(day) {
   document.getElementById('snackInput')?.focus();
 }
 
-function addSnackItem() {
-  const inp = document.getElementById('snackInput');
-  const val = inp?.value?.trim();
-  if(!val) return;
-  if(!window._snackItems) window._snackItems = [];
-  window._snackItems.push(val);
-  inp.value = '';
-  refreshSnackList();
-}
-
 function removeSnackItem(idx) {
   window._snackItems?.splice(idx, 1);
   refreshSnackList();
@@ -8700,21 +7888,6 @@ async function saveSnack(day) {
 
 // Translate a single recipe name from English to French using a local map
 // (avoids API calls for common words)
-
-
-
-function openMealRecipe(mealName) {
-  const all = getAllRecipes();
-  // Try exact match first
-  let recipe = all.find(r => mealName.includes(r.name));
-  // Try partial match
-  if(!recipe) recipe = all.find(r => r.name.split(' ').slice(0,2).every(w => mealName.toLowerCase().includes(w.toLowerCase())));
-  if(recipe) {
-    openRecipeDetail(recipe.id || recipe.name);
-  } else {
-    showToast('ℹ️','Recette','Détails non disponibles pour ce repas.');
-  }
-}
 
 
 
@@ -8809,39 +7982,6 @@ function translateRecipeName(name) {
   return translated.charAt(0).toUpperCase() + translated.slice(1);
 }
 
-async function searchSpoonForMeal(day, slot) {
-  const q = document.getElementById('mealSpoonSearch')?.value?.trim();
-  if(!q) return;
-  const res = document.getElementById('mealSpoonResults');
-  if(res) { res.style.display = 'block'; res.innerHTML = '<div style="padding:8px;font-size:.75rem;color:var(--tx2);">🔄 Recherche...</div>'; }
-  
-  try {
-    const diet = state.selectedDiet[0]||state.profile?.diet||'omnivore';
-    const dietMap = {veg:'vegetarian',vegan:'vegan',gluten:'gluten free',keto:'ketogenic',pesc:'pescetarian'};
-    const dietParam = dietMap[diet] ? `&diet=${dietMap[diet]}` : '';
-    const url = `https://api.spoonacular.com/recipes/complexSearch?apiKey=${SPOONACULAR_KEY}&query=${encodeURIComponent(q)}&number=6&addRecipeInformation=true&addRecipeNutrition=true${dietParam}`;
-    const resp = await fetch(url);
-    const data = await resp.json();
-    const recipes = (data.results||[]).map((r,i) => ({
-      id: 'sp_'+r.id, name: r.title,
-      photo: r.image, time: r.readyInMinutes,
-      kcal: Math.round(r.nutrition?.nutrients?.find(n=>n.name==='Calories')?.amount||0),
-      emoji: '🌐', source: 'spoonacular',
-      ingredients: (r.extendedIngredients||[]).map(i=>({name:i.name,qty:i.amount,unit:i.unit}))
-    }));
-    // Cache
-    if(recipes.length) state.spoonCache[q.toLowerCase()] = recipes;
-    if(res) res.innerHTML = recipes.length
-      ? recipes.map(r => `<div class="meal-pick-item" style="background:rgba(0,181,184,.07);" onclick="selectSpoonForMeal('${r.id}',${day},'${slot}')">
-          ${r.photo?`<img src="${r.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:var(--rs);flex-shrink:0;" onerror="_imgFallback(this,${JSON.stringify((r.photoCandidates||[]).slice(1))})">`:'<span class="meal-pick-em">🌐</span>'}
-          <div style="flex:1;min-width:0;"><div class="meal-pick-name">${r.name}</div><div style="font-size:.6rem;color:var(--tx3);">⏱ ${r.time||'?'}min${r.kcal?' · 🔥'+r.kcal+' kcal':''}</div></div>
-        </div>`).join('')
-      : '<div style="padding:8px;font-size:.75rem;color:var(--tx2);">Aucun résultat</div>';
-  } catch(e) {
-    if(res) res.innerHTML = '<div style="padding:8px;font-size:.75rem;color:var(--rd);">Erreur de recherche</div>';
-  }
-}
-
 function selectSpoonForMeal(recipeId, day, slot) {
   const recipe = Object.values(state.spoonCache).flat().find(r => r.id === recipeId);
   if(!recipe) return;
@@ -8918,14 +8058,6 @@ function selectRecipeForMeal(idOrName, day, slot) {
   closeMealEdit();
   showToast('✅', r.name, [r.kcal?'🔥 '+r.kcal+' kcal':'', r.time?'⏱️ '+r.time+' min':''].filter(Boolean).join(' · ') || 'Ajouté au menu !');
 }
-function saveMealEdit(day, slot) {
-  const val=document.getElementById('mealEditInput')?.value?.trim();
-  if(!val) return;
-  if(!state.weekMenu[day]) state.weekMenu[day]={};
-  state.weekMenu[day][slot]=val;
-  delete state.weekMenu[day][slot+'Data'];
-  saveWeekMenu(); closeMealEdit(); renderWeek();
-}
 function closeMealEdit() { document.getElementById('mealEditOverlay')?.classList.remove('on'); }
 
 // ── Génération IA d'un jour ─────────────────────────────────
@@ -8986,21 +8118,10 @@ async function regenDayAI(day) {
   }
 }
 
-async function generateAIDayMenu(day) { regenDayAI(day); } // compat
-
-function generateDayMenu(day) {
-  const diet=state.selectedDiet.includes('vegan')?'vegan':state.selectedDiet.includes('veg')?'veg':state.selectedDiet.includes('pesc')?'pesc':'omnivore';
-  const pool=MEALS_POOL[diet]||MEALS_POOL.omnivore;
-  state.weekMenu[day]=pool[Math.floor(Math.random()*pool.length)];
-  saveWeekMenu(); renderWeek(); renderDayDetail();
-}
-
 function clearDayMenu(day) {
   delete state.weekMenu[day];
   saveWeekMenu(); renderWeek();
 }
-
-function generateWeekMenu() { generateAIMenuFull(); } // compat
 
 // ── Ingrédients du jour → liste ─────────────────────────────
 function addDayIngredients(day) {
@@ -9178,23 +8299,6 @@ function _addToCartFallback(label) {
 }
 
 
-function toggleIngSel(idx, row) {
-  const check = document.getElementById('ingSelCheck_'+idx);
-  if(!check) return;
-  const isOn = check.textContent === '✓';
-  if(isOn) {
-    check.textContent = '';
-    check.style.background = 'transparent';
-    row.style.opacity = '.5';
-    row.style.borderColor = 'transparent';
-  } else {
-    check.textContent = '✓';
-    check.style.background = 'var(--ac)';
-    row.style.opacity = '1';
-    row.style.borderColor = 'var(--ac)';
-  }
-}
-
 function confirmAddIngredients(names, overlay) {
   const pending = window._pendingIngredients || [];
   let added = 0;
@@ -9270,10 +8374,6 @@ function renderSeason() {
 
 
 // Merge with existing RECIPES_DB
-function getAllFrenchRecipes() {
-  return [...(window.RECIPES_DB || []), ...RECIPES_FR, ...state.customRecipes].map((r,i) => ({...r, id: r.id || 'r_'+i}));
-}
-
 const RECIPES_FR = [
   {id:"fr1",emoji:"\ud83c\udf72",name:"Soupe \u00e0 l'Oignon Gratin\u00e9e",diet:"veg",mealTypes:["l", "d"],time:50,portions:4,kcal:290,prot:12,carb:32,fat:14,ingredients:[{"name": "Oignons", "qty": "800", "unit": "g"}, {"name": "Beurre", "qty": "40", "unit": "g"}, {"name": "Vin blanc sec", "qty": "150", "unit": "ml"}, {"name": "Bouillon de boeuf", "qty": "1", "unit": "L"}, {"name": "Pain baguette", "qty": "8", "unit": "tranches"}, {"name": "Gruyère râpé", "qty": "150", "unit": "g"}],instructions:["Émincer les oignons. Les caraméliser au beurre 30 min à feu doux en remuant.", "Déglacer au vin blanc. Ajouter le bouillon, mijoter 15 min.", "Répartir dans des bols, poser le pain, recouvrir de gruyère.", "Gratiner 5 min sous le gril."]},
   {id:"fr2",emoji:"\ud83e\udd63",name:"Vichyssoise",diet:"veg",mealTypes:["l", "d"],time:40,portions:4,kcal:220,prot:6,carb:24,fat:12,ingredients:[{"name": "Poireaux", "qty": "4", "unit": "pièce"}, {"name": "Pommes de terre", "qty": "500", "unit": "g"}, {"name": "Beurre", "qty": "30", "unit": "g"}, {"name": "Bouillon de volaille", "qty": "1", "unit": "L"}, {"name": "Crème fraîche", "qty": "150", "unit": "ml"}, {"name": "Ciboulette", "qty": "1", "unit": "bouquet"}],instructions:["Faire suer les blancs de poireaux au beurre 10 min.", "Ajouter pommes de terre en dés et bouillon, cuire 25 min.", "Mixer finement, incorporer la crème.", "Servir froid avec la ciboulette ciselée."]},
@@ -9352,12 +8452,6 @@ function filterRecipesView(q) {
   renderRecipesGrid();
 }
 
-function filterRecipesDiet(el, val) {
-  _recipeDietFilter=val;
-  document.querySelectorAll('#recipeDietFilter .diet-chip').forEach(c=>c.classList.toggle('on',c.dataset.v===val));
-  renderRecipesGrid();
-}
-
 function renderRecipesGrid() {
   const grid = document.getElementById('recipesGridAll');
   if(!grid) return;
@@ -9394,8 +8488,8 @@ function renderRecipesGrid() {
       const isBm = bookmarks.some(b=>b.id===r.id);
       return `<div style="background:var(--bg);border-radius:var(--rs);box-shadow:var(--so);overflow:hidden;position:relative;">
         <div onclick="openCustomRecipeDetail('${r.id}')" style="cursor:pointer;">
-          ${r.photo?`<img src="${r.photo}" style="width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center top;display:block;" loading="lazy" onerror="_imgFallback(this,${JSON.stringify((r.photoCandidates||[]).slice(1))})">`
-                   :`<div style="aspect-ratio:4/3;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
+          ${r.photo?`<img src="${r.photo}" style="width:100%;height:80px;object-fit:cover;" loading="lazy" onerror="_imgFallback(this,${JSON.stringify((r.photoCandidates||[]).slice(1))})">`
+                   :`<div style="height:64px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
           <div style="padding:8px 8px 4px;">
             <div style="font-size:.76rem;font-weight:800;line-height:1.3;">${r.name}</div>
             <div style="font-size:.6rem;color:var(--tx2);margin-top:2px;">${r.time?r.time+'min · ':''}${r.kcal?r.kcal+'kcal':''}</div>
@@ -9426,8 +8520,8 @@ function renderRecipesGrid() {
       const isBm = bookmarks.some(b=>b.id===r.id);
       return `<div style="background:var(--bg);border-radius:var(--rs);box-shadow:var(--so);overflow:hidden;position:relative;cursor:pointer;">
         <div onclick="openRecipeDetail('${(r.id||r.name).replace(/'/g,"\\'")}')">
-          ${r.photo&&!r.photo.startsWith('data:')?`<img src="${r.photo}" style="width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center top;display:block;" onerror="this.style.display=&apos;none&apos;" loading="lazy">`
-                   :`<div style="aspect-ratio:4/3;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
+          ${r.photo&&!r.photo.startsWith('data:')?`<img src="${r.photo}" style="width:100%;height:80px;object-fit:cover;" onerror="this.style.display=&apos;none&apos;" loading="lazy">`
+                   :`<div style="height:64px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
           <div style="padding:8px 8px 4px;">
             <div style="font-size:.76rem;font-weight:800;line-height:1.3;">${r.name}</div>
             <div style="font-size:.6rem;color:var(--tx2);margin-top:2px;">${r.source==='jow'?'🇫🇷 Jow':r.source==='ai'?'🤖 IA':r.source==='translated'?'🇫🇷 Traduite':''}${r.time?' · '+r.time+'min':''}${r.kcal?' · '+r.kcal+'kcal':''}</div>
@@ -9482,15 +8576,6 @@ function renderFavsGrid() {
     </div>`;
 }
 
-function toggleFavoritesView() {
-  const sec = document.getElementById('favoritesSection');
-  if(!sec) return;
-  const isHidden = sec.style.display === 'none';
-  sec.style.display = isHidden ? 'block' : 'none';
-  const btn = document.getElementById('favToggleBtn');
-  if(btn) btn.style.background = isHidden ? 'rgba(246,211,101,.2)' : '';
-}
-
 function openCustomRecipeDetail(id) {
   const r = (state.customRecipes||[]).find(x=>x.id===id);
   if(!r) return;
@@ -9542,15 +8627,6 @@ function openCustomRecipeDetail(id) {
   document.body.appendChild(overlay);
   // Swipe down to close
   _attachSwipeClose('customDetailModal', () => overlay.remove());
-}
-
-function openFavRecipe(id) {
-  // Chercher la recette dans toutes les sources
-  const all = [...(getAllRecipes?getAllRecipes():[]), ...(state.recipeBookmarks||[])];
-  const r = all.find(x => x.id===id);
-  if(r && r.source==='custom') { openCustomRecipeDetail(id); return; }
-  // mdbId removed
-  if(r) openRecipeDetail(id);
 }
 
 function editCustomRecipe(id) {
@@ -9684,38 +8760,9 @@ function assignRecipeToDaySlot(idOrName, day, slot) {
 }
 
 // ── Ingrédients manquants → liste ───────────────────────────
-function addRecipeIngredients(idOrName) {
-  const all=getAllRecipes();
-  const r=all.find(x=>x.id===idOrName||x.name===idOrName);
-  if(!r||!r.ingredients?.length) { showToast('ℹ️','Pas d\'ingrédients','Ajoutez des ingrédients à cette recette'); return; }
-  const fridgeNames=state.fridge.map(f=>f.name.toLowerCase());
-  let added=0; let alreadyHave=0;
-  r.ingredients.forEach(ing=>{
-    const ingName=typeof ing==='string'?ing:ing.name;
-    const key=ingName.toLowerCase().split(' ')[0];
-    if(fridgeNames.some(fn=>fn.includes(key))) { alreadyHave++; return; }
-    if(state.items.some(it=>it.name.toLowerCase().includes(key))) return;
-    state.items.unshift({id:'i'+Date.now()+Math.random().toString(36).slice(2,6),name:ingName,emoji:'🛒',cat:'🍝 Épicerie',price:0,qty:1,checked:false,addedAt:Date.now()});
-    added++;
-  });
-  if(added>0) { saveItems(); renderList(); }
-  showToast('🛒',added>0?added+' ingrédients ajoutés':alreadyHave+' déjà en stock','Pour '+r.name);
-}
-
 // ── Créer recette ────────────────────────────────────────────
 let _crState = {ingredients:[], steps:[], photo:null};
 
-function openCreateRecipe() {
-  _crState={ingredients:[],steps:[],photo:null};
-  ['cr_name','cr_emoji','cr_time','cr_portions','cr_kcal','cr_prot','cr_carb','cr_fat','cr_notes'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  const diet=document.getElementById('cr_diet'); if(diet) diet.value='omnivore';
-  crRenderIngr(); crRenderSteps();
-  const ph=document.getElementById('crPhotoPh'); if(ph) ph.style.display='block';
-  const prev=document.getElementById('crPhotoPreview'); if(prev) { prev.style.display='none'; prev.src=''; }
-  document.getElementById('createRecipeOverlay').classList.add('on');
-}
 function closeCreateRecipe() { document.getElementById('createRecipeOverlay')?.classList.remove('on'); }
 
 function crPickPhoto() { document.getElementById('crPhotoInput').click(); }
@@ -9788,98 +8835,9 @@ function saveNewRecipe() {
   renderRecipesGrid();
   showToast('✅', name, 'Recette ' + (window._crEditId ? 'modifiée' : 'créée') + (added ? ' · ' + added + ' ingrédients ajoutés à la liste' : ''));
 }
-function saveCustomRecipe() { saveNewRecipe(); } // compat alias
-
-
 // ── Nutrition ────────────────────────────────────────────────
 function renderNutriTab() { try { sc_nutri_render(); } catch(e){} }
 
-function renderSportPieChart(p, totalCals) {
-  const el = document.getElementById('sportPieChart');
-  if(!el) return;
-  const sport = getSportBurnSummary(p);
-  if(!sport || !totalCals) {
-    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--tx2);font-size:.78rem;">Configurez votre profil et votre activité sportive pour voir ce graphique.</div>';
-    return;
-  }
-
-  const baseBMR = totalCals - sport.totalBurn;
-  const activityBurn = sport.burn;
-  const extraBurn = sport.extraKcal;
-
-  const segments = [
-    { label: 'Métabolisme de base', val: Math.max(0, baseBMR), color: '#3498db', icon: '❤️' },
-    { label: 'Activité quotidienne', val: activityBurn, color: '#2ecc71', icon: '🚶' },
-    { label: 'Sport supplémentaire', val: extraBurn, color: '#e74c3c', icon: '🏃' },
-  ].filter(s => s.val > 0);
-
-  const total = segments.reduce((s, seg) => s + seg.val, 0);
-  if(!total) { el.innerHTML = ''; return; }
-
-  // SVG donut
-  const R = 52, CX = 64, CY = 64, SW = 20;
-  const CIRC = 2 * Math.PI * R;
-  let offset = CIRC / 4;
-  const paths = segments.map(seg => {
-    const pct = seg.val / total;
-    const dashlen = pct * CIRC;
-    const path = `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${seg.color}" stroke-width="${SW}"
-      stroke-dasharray="${dashlen.toFixed(2)} ${(CIRC - dashlen).toFixed(2)}"
-      stroke-dashoffset="${offset.toFixed(2)}" stroke-linecap="butt"/>`;
-    offset -= dashlen;
-    return path;
-  }).join('');
-
-  const legend = segments.map(seg => {
-    const pct = Math.round(seg.val / total * 100);
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <div style="width:12px;height:12px;border-radius:3px;background:${seg.color};flex-shrink:0;"></div>
-      <div style="flex:1;font-size:.74rem;font-weight:700;">${seg.icon} ${seg.label}</div>
-      <div style="font-size:.82rem;font-weight:900;color:${seg.color};">${seg.val} kcal</div>
-      <div style="font-size:.62rem;color:var(--tx3);min-width:28px;text-align:right;">${pct}%</div>
-    </div>`;
-  }).join('');
-
-  el.innerHTML = `<div style="display:flex;align-items:center;gap:18px;">
-    <svg width="128" height="128" viewBox="0 0 128 128" style="flex-shrink:0;">
-      <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="var(--bg2)" stroke-width="${SW}"/>
-      ${paths}
-      <text x="${CX}" y="${CY-6}" text-anchor="middle" font-size="13" font-weight="900" fill="var(--tx)">${totalCals}</text>
-      <text x="${CX}" y="${CY+10}" text-anchor="middle" font-size="9" fill="var(--tx2)">kcal/jour</text>
-    </svg>
-    <div style="flex:1;">${legend}
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--bg2);">
-        <div style="font-size:.68rem;color:var(--tx3);">Sport pratiqué: <strong style="color:var(--tx);">${p.sport||'Non défini'}</strong></div>
-        <div style="font-size:.68rem;color:var(--tx3);">Niveau: <strong style="color:var(--tl);">${sport.label}</strong></div>
-      </div>
-    </div>
-  </div>`;
-}
-
-function renderNutriWeekOld(calTarget) {
-  const DAYS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-  const card=document.getElementById('nutriWeekCard');
-  if(!card) return;
-  if(!Object.keys(state.weekMenu).length) {
-    card.innerHTML=`<div style="text-align:center;padding:20px;color:var(--tx2);font-size:.82rem;">Générez un menu pour voir le bilan nutritionnel</div>`;
-    return;
-  }
-  card.innerHTML=DAYS.map((d,i)=>{
-    const dn=i+1;
-    const menu=state.weekMenu[dn];
-    const kcal=menu?.nutri?.kcal||0;
-    const pct=calTarget&&kcal?Math.min(100,Math.round(kcal/calTarget*100)):0;
-    const color=pct>=85&&pct<=105?'var(--gn)':pct>110?'var(--rd)':'var(--yl)';
-    return `<div class="nutri-week-row">
-      <div class="nutri-week-day">${d}</div>
-      <div class="nutri-week-bar-wrap"><div class="nutri-week-bar">
-        <div class="nutri-week-bar-fill" style="width:${pct}%;background:${color};"></div>
-      </div></div>
-      <div class="nutri-week-kcal">${kcal?kcal+' kcal':'—'}</div>
-      <span style="font-size:.7rem;margin-left:4px;">${pct>=85&&pct<=105?'✅':pct>110?'⚠️':kcal?"🔵":"➖"}</span>
-    </div>`;
-  }).join('');
-}
 async function generateNutriAdvice() {
 
   const zone = document.getElementById('nutriAdviceZone');
@@ -10180,10 +9138,6 @@ Réponds :
 
 
 // ── Compatibilité ancien code ────────────────────────────────
-function handleMenuTap(event) { /* désactivé - menu direct */ }
-function renderDayDetailCompat() { renderDayDetail(); }
-
-
 function confirm2(icon, title, msg, cb) {
   confirmCallback = cb;
   document.getElementById('confirmIcon').textContent = icon;
@@ -10218,15 +9172,6 @@ function showToast(icon, title, msg, duration=3500) {
 // PRODUCTS DATABASE
 // ═══════════════════════════════════════════════
 // ═══ Analyse semaine — affiche le récap SANS régénérer ══════
-async function analyzeWeekWithAI() {
-  const days = Object.values(state.weekMenu || {}).filter(d => d && (d.l || d.d || d.b));
-  if(!days.length) {
-    showToast('⚠️', 'Menu vide', 'Générez d\'abord un menu dans l\'onglet Semaine.');
-    return;
-  }
-  openWeekSummaryModal();
-}
-
 function openWeekSummaryModal() {
   document.getElementById('weekSummaryOverlay')?.remove();
   document.getElementById('_weekSummaryModal')?.remove();

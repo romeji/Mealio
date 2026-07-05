@@ -1,47 +1,14 @@
+// startBarcodeCamera / stopBarcodeCamera / startLiveBarcodeScan sont
+// définies dans index.html (version plus récente et complète : trait
+// rouge animé, flash vert, fallback capture photo). Ne PAS les redéfinir
+// ici pour éviter tout écrasement silencieux au chargement des scripts.
+
 /* SMARTCARD — MODULE SCAN */
 
-// URL de base de l'API serverless (Vercel) — gemini-vision.js n'est plus
-// accessible en /api/... relatif car ce fichier n'est jamais exécuté sur
-// GitHub Pages (hébergement statique uniquement, aucun backend possible).
+// URL de base de l'API serverless (Vercel) — les endpoints /api/... ne sont
+// jamais exécutables tels quels sur GitHub Pages (hébergement statique
+// uniquement, aucun backend possible) donc on force le domaine complet.
 const API_BASE = 'https://smartcard-eosin.vercel.app';
-
-async function startLiveBarcodeScan() {
-  const videoEl = document.getElementById('barcodeVideo');
-  if(!videoEl) return;
-
-  const detector = await initBarcodeDetector();
-  if(!detector) { showToast('ℹ️','Scanner','Utilisez la saisie manuelle'); return; }
-
-  _scanActive = true;
-  let lastCode = null;
-  let lastCodeTime = 0;
-
-  const scanFrame = async () => {
-    if(!_scanActive || !videoEl.srcObject) return;
-    try {
-      let codes = [];
-      if(detector._zxing) {
-        // ZXing path — skip (handled elsewhere)
-      } else {
-        codes = await detector.detect(videoEl);
-      }
-      if(codes.length > 0) {
-        const code = codes[0].rawValue;
-        // Debounce: same code must persist 500ms before triggering
-        if(code === lastCode && Date.now() - lastCodeTime > 500) {
-          _scanActive = false;
-          showToast('✅','Code scanné','Recherche du produit...');
-          lookupBarcode(code);
-          return;
-        }
-        if(code !== lastCode) { lastCode = code; lastCodeTime = Date.now(); }
-      }
-    } catch(e) {}
-    if(_scanActive) requestAnimationFrame(scanFrame);
-  };
-
-  videoEl.addEventListener('loadeddata', () => { scanFrame(); }, {once:true});
-}
 
 // TICKET SCAN — Powered by Tesseract.js + Mistral AI
 // Basé sur Smart Receipt AI V8 ULTIME
@@ -50,7 +17,6 @@ let ticketParsedItems = [];
 let aiCache = {};
 try { aiCache = JSON.parse(localStorage.getItem('sc_ai_cache') || '{}'); } catch(e) {}
 
-const MISTRAL_KEY = 'jOTJWyqoNRUtmbd0KL5QP2ncDmBofky2';
 const STORES_LIST = ['Carrefour','Leclerc','Auchan','Intermarché','Lidl','Aldi','Monoprix','Casino','Super U','Franprix','Picard','Biocoop','Naturalia','La Vie Claire','Netto','Leader Price','Simply','Système U','Spar','Grand Frais','Bio c Bon','Marché U'];
 
 // ── Navigation ──────────────────────────────────
@@ -179,38 +145,17 @@ async function askMistralAI(lines) {
 
   if(uncached.length > 0) {
     setOCRProgress(82, 'Correction Mistral AI (' + uncached.length + ' articles)...');
-    const prompt = `Tu es expert en tickets de caisse français (Carrefour, Leclerc, Lidl, etc.).
-
-Corrige ces noms de produits issus d'un OCR (souvent déformés, tronqués, en majuscules ou avec des erreurs) en noms de produits courants et lisibles en français.
-
-${JSON.stringify(uncached)}
-
-Règles STRICTES :
-- Corrige les fautes et abréviations OCR
-- Garde les noms courts et naturels (ex: "LAIT 1/2 ECR 1L" → "Lait demi-écrémé")
-- NE PAS inclure les quantités (ex: "2x", "x3", "1 X") dans le nom — ce sont des multiplicateurs de ligne, pas le nom du produit
-- NE PAS inclure les volumes ou poids dans le nom sauf si ça fait partie du nom commercial (ex: "Coca 1,5L" → "Coca-Cola")
-- Si tu ne reconnais pas, retourne le nom nettoyé sans chiffres parasites
-- Réponds UNIQUEMENT en JSON tableau de strings, même ordre, même longueur, sans texte autour`;
 
     try {
-      const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      const res = await fetch(API_BASE + '/api/mistral-correct', {
         method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + MISTRAL_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'mistral-small',
-          messages: [{ role: 'user', content: prompt }]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lines: uncached }),
       });
       const data = await res.json();
-      let results = [];
-      try {
-        const raw = data.choices[0].message.content;
-        results = JSON.parse(raw.replace(/```json|```/g, '').trim());
-      } catch(e) { results = uncached; }
+      const results = Array.isArray(data.results) && data.results.length === uncached.length
+        ? data.results
+        : uncached; // dégradation gracieuse si la réponse est inattendue
 
       uncached.forEach((l, i) => {
         aiCache[l] = results[i] || l;
@@ -1556,82 +1501,6 @@ function renderAlternatives(products) {
 }
 
 // ── Scan caméra avec fallback fichier ────────────
-async function startBarcodeCamera() {
-  stopBarcodeCamera();
-
-  // Vérifier BarcodeDetector natif
-  if(!('BarcodeDetector' in window)) {
-    // Fallback : input file avec capture caméra (comme le module ticket)
-    const fallbackInput = document.getElementById('barcodeFileInput');
-    if(fallbackInput) {
-      fallbackInput.click();
-    } else {
-      // Créer dynamiquement
-      const inp = document.createElement('input');
-      inp.type='file'; inp.accept='image/*'; inp.capture='environment'; inp.style.display='none'; inp.id='barcodeFileInput';
-      inp.onchange = async e => {
-        const file = e.target.files[0]; if(!file) return;
-        showBarcodeLoading('Lecture du code-barres...');
-        // Essayer de lire via canvas + BarcodeDetector de nouveau
-        // Sinon demander saisie manuelle
-        showBarcodeError('Lecture automatique non disponible.<br>Saisissez le code-barres manuellement ci-dessus.<br><span style="font-size:.65rem;color:var(--tx3);">Le code est imprimé sous le code-barres.</span>');
-        document.getElementById('barcodeInput').focus();
-      };
-      document.body.appendChild(inp);
-      inp.click();
-    }
-    showToast('ℹ️','Conseil','Saisissez le code à 13 chiffres sous le code-barres du produit.');
-    return;
-  }
-
-  const camZone = document.getElementById('barcodeCamera');
-  const video = document.getElementById('barcodeVideo');
-  const statusEl = document.getElementById('barcodeScanStatus');
-
-  try {
-    barcodeStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: {ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }
-    });
-    video.srcObject = barcodeStream;
-    startLiveBarcodeScan(); // Enable native BarcodeDetector if available
-    await video.play();
-    camZone.style.display = 'block';
-    statusEl.textContent = '🔍 Centrez le code-barres dans le cadre...';
-
-    const formats = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39'];
-    let supported = formats;
-    try { supported = await BarcodeDetector.getSupportedFormats(); } catch(e) {}
-    const detector = new BarcodeDetector({ formats: formats.filter(f => supported.includes(f)) });
-
-    let lastCode = '';
-    barcodeScanInterval = setInterval(async () => {
-      if(video.readyState < 2 || video.paused) return;
-      try {
-        const barcodes = await detector.detect(video);
-        if(barcodes.length > 0) {
-          const code = barcodes[0].rawValue.replace(/\D/g,'');
-          if(code === lastCode) return; // éviter doubles appels
-          lastCode = code;
-          statusEl.textContent = '✅ Code détecté : ' + code;
-          stopBarcodeCamera();
-          document.getElementById('barcodeInput').value = code;
-          lookupBarcode(code);
-        }
-      } catch(e) {}
-    }, 400);
-  } catch(e) {
-    if(camZone) camZone.style.display = 'none';
-    showToast('❌','Accès refusé','Autorisez la caméra dans les réglages du navigateur.');
-  }
-}
-
-function stopBarcodeCamera() {
-  if(barcodeScanInterval) { clearInterval(barcodeScanInterval); barcodeScanInterval = null; }
-  if(barcodeStream) { barcodeStream.getTracks().forEach(t=>t.stop()); barcodeStream = null; }
-  const camZone = document.getElementById('barcodeCamera');
-  if(camZone) camZone.style.display = 'none';
-}
-
 // ── Historique ────────────────────────────────────
 function saveBarcodeHistory(product) {
   barcodeHistory = barcodeHistory.filter(h => h.barcode !== product.barcode);
