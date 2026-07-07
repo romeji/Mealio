@@ -1339,7 +1339,7 @@ body.offline-mode .offline-banner{display:block;}
         </div>
 
         <!-- ═══ MODULE TICKET ═══ -->
-        <div id="scanModTicket">
+        <div id="scanModTicket" style="display:block;">
           <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(230,126,34,.12);border:1px solid rgba(230,126,34,.3);border-radius:var(--rp);padding:4px 12px;font-size:.68rem;font-weight:700;color:#e67e22;margin-bottom:14px;">🧪 Bêta — Vérifiez chaque ligne après analyse</div>
 
           <div class="card mb14" style="border-left:3px solid var(--ac);">
@@ -3959,6 +3959,24 @@ function initMenuModule() {
   renderFavsGrid();
   renderRecipesGrid();
   renderNutriTab();
+
+  // Comme pour le Frigo : renderRecipesGrid peut déclencher un chargement
+  // Firestore asynchrone (syncGlobalRecipesFromFirestore) qui réinjecte du
+  // contenu bien après les tentatives de reset scroll à intervalles fixes
+  // de _doSwitchTab, décalant la vue sans qu'on la rattrape. On observe la
+  // fin réelle de ce chargement pour refaire un reset ciblé à ce moment-là.
+  if(typeof getGlobalRecipeDB === 'function' && getGlobalRecipeDB().length === 0) {
+    const checkLoaded = setInterval(() => {
+      if(typeof _recipesLoaded !== 'undefined' && _recipesLoaded) {
+        clearInterval(checkLoaded);
+        const view = document.getElementById('vMenu');
+        const vb = view?.querySelector('.vb');
+        if(vb) vb.scrollTop = 0;
+      }
+    }, 200);
+    // Ne pas laisser tourner indéfiniment si le chargement échoue
+    setTimeout(() => clearInterval(checkLoaded), 8000);
+  }
 }
 
 // ── Sous-onglets ────────────────────────────────────────────
@@ -6671,7 +6689,7 @@ function _previewMealSlot(day, slot) {
       <div style="padding:18px 18px 36px;">
         <div style="font-size:.62rem;font-weight:900;color:var(--ac);text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px;">${labels[slot]||''}</div>
         <div style="font-size:1rem;font-weight:900;line-height:1.3;margin-bottom:14px;">${name}</div>
-        ${nutri.length ? `<div style="display:grid;grid-template-columns:repeat(${Math.min(nutri.length,5)},1fr);gap:7px;">${nutri.join('')}</div>` : ''}
+        ${nutri.length ? `<div style="display:flex;flex-wrap:wrap;gap:7px;">${nutri.map(n => n.replace('<div style="text-align:center;', '<div style="text-align:center;flex:1 1 auto;min-width:70px;max-width:110px;')).join('')}</div>` : ''}
         ${ingHtml}
         ${stepsHtml}
         <div style="display:flex;gap:8px;margin-top:18px;">
@@ -6729,10 +6747,12 @@ function applyAIMenuResult(data) {
       return {
         name: (m.emoji || '🍽️') + ' ' + (m.name || ''),
         kcal: m.kcal || 0, prot: m.prot || 0, carb: m.carb || 0, fat: m.fat || 0,
+        time: m.time || m.cookTime || null,
         recipeId: m.jowId || null,
         photo: m.photo || null,
         source: m.jowId ? 'jow' : 'ai',
         ingredients: (m.ingredients || []).slice(0, 12),
+        instructions: (m.instructions || []).slice(0, 15),
       };
     };
     if(!state.weekMenu[dn]) state.weekMenu[dn] = {};
@@ -7786,6 +7806,7 @@ async function omeSelectJow(recipe, day, slot) {
     fat:  recipe.fat  || 0,
     time: recipe.time || null,
     ingredients: (recipe.ingredients || []).slice(0, 10),
+    instructions: (recipe.instructions || []).slice(0, 15),
     source: 'jow',
   };
   _refreshDayNutri(day);
@@ -8032,8 +8053,12 @@ function selectSpoonForMeal(recipeId, day, slot) {
     recipeId: recipe.id,
     photo: recipe.photo || null,
     kcal: recipe.kcal || 0,
+    prot: recipe.prot || 0,
+    carb: recipe.carb || 0,
+    fat:  recipe.fat  || 0,
     time: recipe.time || null,
     ingredients: (recipe.ingredients || []).slice(0, 10),
+    instructions: (recipe.instructions || []).slice(0, 15),
     source: 'spoon',
   };
   saveWeekMenu();
@@ -8078,6 +8103,7 @@ function selectRecipeForMeal(idOrName, day, slot) {
     time:  r.time  || r._prepTime || null,
     notes: r.notes || '',
     ingredients: (r.ingredients||[]).slice(0, 10),
+    instructions: (r.instructions||[]).slice(0, 15),
   };
   state.weekMenu[day][slot+'Data'] = mealData;
 
@@ -8786,7 +8812,10 @@ function assignRecipeToDaySlot(idOrName, day, slot) {
   state.weekMenu[day][slot+'Data']={
     name: r.name, recipeId: r.id, photo: r.photo || null,
     kcal: r.kcal||0, prot: r.prot||0, carb: r.carb||0, fat: r.fat||0,
-    ingredients: (r.ingredients||[]).slice(0,12), source: r.source||'custom',
+    time: r.time || r.cookTime || null,
+    ingredients: (r.ingredients||[]).slice(0,12),
+    instructions: (r.instructions||[]).slice(0,15),
+    source: r.source||'custom',
   };
   if(r.kcal) {
     if(!state.weekMenu[day].nutri) state.weekMenu[day].nutri={};
