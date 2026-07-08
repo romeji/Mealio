@@ -2165,9 +2165,15 @@ function dbg() {}
 // ═══════════════════════════════════════════════
 // LOCAL STORAGE
 // ═══════════════════════════════════════════════
-function saveState() {
+let _saveStateTimer = null;
+function saveState(immediate) {
+  if(immediate) { _doSaveState(); return; }
+  if(_saveStateTimer) clearTimeout(_saveStateTimer);
+  _saveStateTimer = setTimeout(_doSaveState, 300);
+}
+function _doSaveState() {
+  _saveStateTimer = null;
   try {
-    // Exclude spoonCache (too large) from localStorage
     const {spoonCache, ...toSave} = state;
     localStorage.setItem('sc_state_v3', JSON.stringify(toSave));
   } catch(e) {}
@@ -2535,7 +2541,7 @@ async function loadFoyerMembers() {
 }
 
 // ═══════════════════════════════════════════════
-// FIREBASE AUTH — FIX: Firestore persistence called only once
+// FIREBASE AUTH
 // ═══════════════════════════════════════════════
 let firebaseInitialized = false;
 async function initFirebase() {
@@ -2546,15 +2552,9 @@ async function initFirebase() {
     auth = firebase.auth();
     if(!firebaseInitialized) {
       db = firebase.firestore();
-      // Only enable persistence once, before any other Firestore operations
-      try {
-        await db.enablePersistence({synchronizeTabs: true});
-      } catch(pe) {
-        // Already enabled or not supported — not critical
-        if(pe.code !== 'failed-precondition' && pe.code !== 'unimplemented') {
-          console.warn('Persistence:', pe.code);
-        }
-      }
+      // enablePersistence supprimé volontairement : bloquait 1-3s au
+      // démarrage sur iOS et pouvait planter (failed-precondition) avec
+      // plusieurs onglets ouverts. Ne PAS la réintroduire.
       firebaseInitialized = true;
     }
     try { await auth.setPersistence(firebase.auth.Auth.Persistence?.LOCAL || 'local'); } catch(pe) { /* persistence may not be available */ }
@@ -2833,24 +2833,27 @@ function fillProfileForm() {
 }
 
 
+let _renderAllTimer = null;
 function renderAll() {
-  // Save scroll positions before re-rendering
-  const scrollPositions = {};
-  document.querySelectorAll('.view.on .vb').forEach(vb => {
-    scrollPositions[vb.closest('.view')?.id] = vb.scrollTop;
-  });
+  if(_renderAllTimer) cancelAnimationFrame(_renderAllTimer);
+  _renderAllTimer = requestAnimationFrame(() => {
+    _renderAllTimer = null;
+    const scrollPositions = {};
+    document.querySelectorAll('.view.on .vb').forEach(vb => {
+      scrollPositions[vb.closest('.view')?.id] = vb.scrollTop;
+    });
 
-  renderList();
-  renderFridge();
-  renderWeek();
+    renderList();
+    renderFridge();
+    renderWeek();
 
-  // Restore scroll positions after render
-  requestAnimationFrame(() => {
-    document.querySelectorAll('.view .vb').forEach(vb => {
-      const viewId = vb.closest('.view')?.id;
-      if(viewId && scrollPositions[viewId] !== undefined) {
-        vb.scrollTop = scrollPositions[viewId];
-      }
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.view .vb').forEach(vb => {
+        const viewId = vb.closest('.view')?.id;
+        if(viewId && scrollPositions[viewId] !== undefined) {
+          vb.scrollTop = scrollPositions[viewId];
+        }
+      });
     });
   });
 }
