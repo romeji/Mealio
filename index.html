@@ -6656,22 +6656,40 @@ function _previewMealSlot(day, slot) {
   const md   = menu[slot + 'Data'];
   const name = menu[slot] || '';
   if(!name) return;
+
+  // Ouvrir la VRAIE fiche recette (celle de l'Explorateur), avec instructions,
+  // vidéo, nutri-score, etc. — au lieu de reconstruire une mini-vue à part
+  // qui rate systématiquement des champs. openRecipeDetail cherche dans
+  // toutes les sources et redirige elle-même vers _openJowRecipe si besoin.
+  if(md?.recipeId) {
+    openRecipeDetail(md.recipeId);
+    return;
+  }
+  // Repli : recette planifiée avant l'ajout de recipeId (anciennes données)
+  // ou recette 100% manuelle sans fiche associée — on tente une dernière
+  // recherche par nom avant d'abandonner sur un mini-aperçu minimal.
+  const cleanName = name.replace(/^[^\s]+\s/, ''); // retire l'emoji en tête
+  const found = (typeof getAllRecipes === 'function' ? getAllRecipes() : [])
+    .find(r => r.name === cleanName || r.name === name)
+    || (window._jowCache && Object.values(window._jowCache).find(r => r.name === cleanName || r.name === name));
+  if(found) {
+    openRecipeDetail(found.id || found.name);
+    return;
+  }
+
+  // Dernier recours : aucune fiche recette retrouvable nulle part — on
+  // affiche au moins ce qu'on a (nom + macros du menu) plutôt que rien.
   const labels = { b:'🌅 Petit-déjeuner', l:'☀️ Déjeuner', d:'🌙 Dîner', snack:'🍎 Collation' };
-  const photo = md?.photo
-    ? `<img src="${md.photo}" style="width:100%;height:190px;object-fit:cover;object-position:center top;border-radius:20px 20px 0 0;" onerror="this.style.display='none'">`
-    : '';
   const nutri = [];
-  if(md?.kcal) nutri.push(`<div style="text-align:center;background:rgba(255,140,66,.12);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:#ff8c42;">${md.kcal}</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">kcal</div></div>`);
-  if(md?.time) nutri.push(`<div style="text-align:center;background:var(--bg2);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:var(--tx);">${md.time}min</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">cuisson</div></div>`);
-  if(md?.prot) nutri.push(`<div style="text-align:center;background:rgba(59,158,221,.12);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:#3b9edd;">${md.prot}g</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">protéines</div></div>`);
-  if(md?.carb) nutri.push(`<div style="text-align:center;background:rgba(245,166,35,.12);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:#f5a623;">${md.carb}g</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">glucides</div></div>`);
-  if(md?.fat)  nutri.push(`<div style="text-align:center;background:rgba(76,175,125,.12);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:#4caf7d;">${md.fat}g</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">lipides</div></div>`);
-  // Recette entière : plus de limite arbitraire à 10 ingrédients
+  if(md?.kcal) nutri.push(`<div style="text-align:center;flex:1 1 auto;min-width:70px;max-width:110px;background:rgba(255,140,66,.12);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:#ff8c42;">${md.kcal}</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">kcal</div></div>`);
+  if(md?.time) nutri.push(`<div style="text-align:center;flex:1 1 auto;min-width:70px;max-width:110px;background:var(--bg2);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:var(--tx);">${md.time}min</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">cuisson</div></div>`);
+  if(md?.prot) nutri.push(`<div style="text-align:center;flex:1 1 auto;min-width:70px;max-width:110px;background:rgba(59,158,221,.12);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:#3b9edd;">${md.prot}g</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">protéines</div></div>`);
+  if(md?.carb) nutri.push(`<div style="text-align:center;flex:1 1 auto;min-width:70px;max-width:110px;background:rgba(245,166,35,.12);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:#f5a623;">${md.carb}g</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">glucides</div></div>`);
+  if(md?.fat)  nutri.push(`<div style="text-align:center;flex:1 1 auto;min-width:70px;max-width:110px;background:rgba(76,175,125,.12);border-radius:12px;padding:9px 12px;"><div style="font-size:1rem;font-weight:900;color:#4caf7d;">${md.fat}g</div><div style="font-size:.55rem;color:var(--tx2);margin-top:2px;">lipides</div></div>`);
   const ingrs = (md?.ingredients||[]).map(i=>typeof i==='string'?i:(i.name||'')).filter(Boolean);
   const ingHtml = ingrs.length
     ? `<div style="margin-top:14px;"><div style="font-size:.6rem;font-weight:900;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;">Ingrédients</div><div style="display:flex;flex-wrap:wrap;gap:5px;">${ingrs.map(i=>`<span style="background:var(--bg2);border-radius:99px;padding:3px 10px;font-size:.68rem;font-weight:700;">${i}</span>`).join('')}</div></div>`
     : '';
-  // Étapes de préparation — absentes de la version précédente
   const steps = (md?.instructions||[]).filter(Boolean);
   const stepsHtml = steps.length
     ? `<div style="margin-top:16px;"><div style="font-size:.6rem;font-weight:900;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Préparation</div>
@@ -6679,6 +6697,9 @@ function _previewMealSlot(day, slot) {
           ${steps.map(s=>`<li style="font-size:.8rem;line-height:1.5;color:var(--tx);">${s}</li>`).join('')}
         </ol>
       </div>`
+    : '';
+  const photo = md?.photo
+    ? `<img src="${md.photo}" style="width:100%;height:190px;object-fit:cover;object-position:center top;border-radius:20px 20px 0 0;" onerror="this.style.display='none'">`
     : '';
 
   const overlay = document.createElement('div');
@@ -6692,7 +6713,7 @@ function _previewMealSlot(day, slot) {
       <div style="padding:18px 18px 36px;">
         <div style="font-size:.62rem;font-weight:900;color:var(--ac);text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px;">${labels[slot]||''}</div>
         <div style="font-size:1rem;font-weight:900;line-height:1.3;margin-bottom:14px;">${name}</div>
-        ${nutri.length ? `<div style="display:flex;flex-wrap:wrap;gap:7px;">${nutri.map(n => n.replace('<div style="text-align:center;', '<div style="text-align:center;flex:1 1 auto;min-width:70px;max-width:110px;')).join('')}</div>` : ''}
+        ${nutri.length ? `<div style="display:flex;flex-wrap:wrap;gap:7px;">${nutri.join('')}</div>` : ''}
         ${ingHtml}
         ${stepsHtml}
         <div style="display:flex;gap:8px;margin-top:18px;">
@@ -6703,9 +6724,6 @@ function _previewMealSlot(day, slot) {
         </div>
       </div>
     </div>`;
-  // Fermeture uniquement au clic explicite sur le fond sombre (pas sur la
-  // carte elle-même) — le clic doit être une vraie action de la souris/du
-  // doigt, jamais un artefact du touchend qui a servi à ouvrir la modale.
   overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }
