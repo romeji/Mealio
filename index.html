@@ -8564,31 +8564,52 @@ function renderRecipesGrid() {
     return text.includes(q);
   }
 
+  // Carte identique à celle de l'Explorateur (_renderJowResults) : mêmes
+  // classes, même aspect-ratio 4/3, mêmes badges nutriscore/greenscore/prix/
+  // régime, bookmark en overlay sur la photo — pour une présentation
+  // strictement cohérente entre Explorer, Mes recettes et Favoris.
+  function renderCard(r, openFn, onDeleteEdit) {
+    const isBm = bookmarks.some(b => b.id === r.id);
+    const habits  = r.eatingHabits || {};
+    const nsBadge = typeof _jowNSBadge === 'function' ? _jowNSBadge(r.nutriScore) : '';
+    const gsBadge = typeof _jowGSBadge === 'function' ? _jowGSBadge(r.greenScore) : '';
+    const prBadge = typeof _jowPriceBadge === 'function' ? _jowPriceBadge(r) : '';
+    const hBadges = typeof _jowHabitBadges === 'function' ? _jowHabitBadges(habits, true) : [];
+    const idEsc = (r.id || r.name).replace(/'/g, "\\'");
+
+    const kcalStr = r.kcal ? `<span style="font-size:.58rem;color:var(--or);">🔥 ${r.kcal} kcal</span>` : '';
+    const timeStr = r.time ? `<span style="font-size:.58rem;color:var(--tx3);">⏱ ${r.time}min</span>` : '';
+    const metaRow = [kcalStr, timeStr, prBadge, nsBadge, gsBadge].filter(Boolean).join('');
+    const habitsHtml = hBadges.length ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;">${hBadges.join('')}</div>` : '';
+
+    const editDeleteRow = onDeleteEdit ? `
+      <div style="display:flex;gap:4px;padding:0 10px 8px;">
+        <button onclick="event.stopPropagation();editCustomRecipe('${idEsc}')" style="flex:1;font-size:.6rem;padding:4px;background:var(--bg2);border:none;border-radius:var(--rx);cursor:pointer;font-weight:700;color:var(--tx2);">✏️</button>
+        <button onclick="event.stopPropagation();deleteCustomRecipe('${idEsc}')" style="flex:1;font-size:.6rem;padding:4px;background:rgba(231,76,60,.1);border:none;border-radius:var(--rx);cursor:pointer;font-weight:700;color:var(--rd);">🗑</button>
+      </div>` : '';
+
+    return `<div class="spoon-recipe-body" style="position:relative;" onclick="${openFn}('${idEsc}')">
+      <button onclick="event.stopPropagation();toggleBookmark('${idEsc}');renderRecipesGrid()"
+        style="position:absolute;top:6px;right:6px;z-index:2;background:rgba(0,0,0,.45);border:none;border-radius:50%;width:28px;height:28px;font-size:.9rem;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;"
+        title="${isBm?'Retirer des favoris':'Ajouter aux favoris'}">${isBm?'⭐':'☆'}</button>
+      ${r.photo && !r.photo.startsWith('data:')
+        ? `<img src="${r.photo}" data-cands="${(r.photoCandidates||[]).join('|')}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--rs) var(--rs) 0 0;" loading="lazy" onerror="_imgFallback(this,(this.dataset.cands||'').split('|').filter(c=>c&&c!==this.src),'<div style=\\'width:100%;aspect-ratio:4/3;background:rgba(255,107,107,.08);border-radius:var(--rs) var(--rs) 0 0;display:flex;align-items:center;justify-content:center;font-size:2rem;\\'>${r.emoji||'🍳'}</div>')">`
+        : `<div style="width:100%;aspect-ratio:4/3;background:rgba(255,107,107,.08);border-radius:var(--rs) var(--rs) 0 0;display:flex;align-items:center;justify-content:center;font-size:2rem;">${r.emoji||'🍳'}</div>`}
+      <div style="padding:10px 10px 8px;">
+        <div style="font-weight:800;font-size:.82rem;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${r.name}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">${metaRow}</div>
+        ${habitsHtml}
+      </div>${editDeleteRow}</div>`;
+  }
+
   let html = '';
 
   // ── Mes recettes perso ──
   const myFiltered = customRecipes.filter(matchSearch);
   if(myFiltered.length > 0) {
     html += `<div style="font-size:.68rem;font-weight:800;color:var(--ac);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">✏️ Mes recettes (${myFiltered.length})</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">`;
-    html += myFiltered.map(r => {
-      const isBm = bookmarks.some(b=>b.id===r.id);
-      return `<div style="background:var(--bg);border-radius:var(--rs);box-shadow:var(--so);overflow:hidden;position:relative;">
-        <div onclick="openCustomRecipeDetail('${r.id}')" style="cursor:pointer;">
-          ${r.photo?`<img src="${r.photo}" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:center top;display:block;" loading="lazy" onerror="_imgFallback(this,${JSON.stringify((r.photoCandidates||[]).slice(1))})">`
-                   :`<div style="aspect-ratio:16/9;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
-          <div style="padding:8px 8px 4px;">
-            <div style="font-size:.76rem;font-weight:800;line-height:1.3;">${r.name}</div>
-            <div style="font-size:.6rem;color:var(--tx2);margin-top:2px;">${r.time?r.time+'min · ':''}${r.kcal?r.kcal+'kcal':''}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:4px;padding:0 8px 8px;">
-          <button onclick="editCustomRecipe('${r.id}')" style="flex:1;font-size:.6rem;padding:4px;background:var(--bg2);border:none;border-radius:var(--rx);cursor:pointer;font-weight:700;color:var(--tx2);">✏️</button>
-          <button onclick="deleteCustomRecipe('${r.id}')" style="flex:1;font-size:.6rem;padding:4px;background:rgba(231,76,60,.1);border:none;border-radius:var(--rx);cursor:pointer;font-weight:700;color:var(--rd);">🗑</button>
-          <button onclick="toggleBookmark('${r.id}');renderRecipesGrid()" style="padding:4px 6px;background:none;border:none;cursor:pointer;font-size:.75rem;">${isBm?'⭐':'☆'}</button>
-        </div>
-      </div>`;
-    }).join('');
+    <div class="spoon-grid" style="margin-bottom:18px;">`;
+    html += myFiltered.map(r => renderCard(r, 'openCustomRecipeDetail', true)).join('');
     html += '</div>';
   }
 
@@ -8602,21 +8623,8 @@ function renderRecipesGrid() {
       <div style="font-size:.68rem;font-weight:800;color:var(--tl);text-transform:uppercase;letter-spacing:.8px;">☁️ Base commune (${sharedFiltered.length})</div>
       <div style="font-size:.6rem;color:var(--tx3);">Partagée entre tous les comptes</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">`;
-    html += sharedFiltered.map(r => {
-      const isBm = bookmarks.some(b=>b.id===r.id);
-      return `<div style="background:var(--bg);border-radius:var(--rs);box-shadow:var(--so);overflow:hidden;position:relative;cursor:pointer;">
-        <div onclick="openRecipeDetail('${(r.id||r.name).replace(/'/g,"\\'")}')">
-          ${r.photo&&!r.photo.startsWith('data:')?`<img src="${r.photo}" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:center top;display:block;" onerror="this.style.display='none'" loading="lazy">`
-                   :`<div style="aspect-ratio:16/9;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">${r.emoji||'🍳'}</div>`}
-          <div style="padding:8px 8px 4px;">
-            <div style="font-size:.76rem;font-weight:800;line-height:1.3;">${r.name}</div>
-            <div style="font-size:.6rem;color:var(--tx2);margin-top:2px;">${r.source==='jow'?'🇫🇷 Jow':r.source==='ai'?'🤖 IA':r.source==='translated'?'🇫🇷 Traduite':''}${r.time?' · '+r.time+'min':''}${r.kcal?' · '+r.kcal+'kcal':''}</div>
-          </div>
-        </div>
-        <button onclick="event.stopPropagation();toggleBookmark('${(r.id||r.name).replace(/'/g,"\\'")}');renderRecipesGrid()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.35);border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;color:#fff;">${isBm?'⭐':'☆'}</button>
-      </div>`;
-    }).join('');
+    <div class="spoon-grid" style="margin-bottom:18px;">`;
+    html += sharedFiltered.map(r => renderCard(r, 'openRecipeDetail', false)).join('');
     html += '</div>';
   } else if(!customRecipes.length && !q) {
     html += `<div style="text-align:center;padding:32px 16px;">
@@ -8647,20 +8655,36 @@ function renderFavsGrid() {
     </div>`;
     return;
   }
+  // Même carte que Mes recettes/Explorateur (badges nutriscore/greenscore/
+  // prix, photo aspect-ratio 4/3) — cohérence visuelle totale entre les 3 vues.
+  const cardsHtml = bookmarks.map(r => {
+    const habits  = r.eatingHabits || {};
+    const nsBadge = typeof _jowNSBadge === 'function' ? _jowNSBadge(r.nutriScore) : '';
+    const gsBadge = typeof _jowGSBadge === 'function' ? _jowGSBadge(r.greenScore) : '';
+    const prBadge = typeof _jowPriceBadge === 'function' ? _jowPriceBadge(r) : '';
+    const hBadges = typeof _jowHabitBadges === 'function' ? _jowHabitBadges(habits, true) : [];
+    const idEsc = (r.id || r.name).replace(/'/g, "\\'");
+
+    const kcalStr = r.kcal ? `<span style="font-size:.58rem;color:var(--or);">🔥 ${r.kcal} kcal</span>` : '';
+    const timeStr = r.time ? `<span style="font-size:.58rem;color:var(--tx3);">⏱ ${r.time}min</span>` : '';
+    const metaRow = [kcalStr, timeStr, prBadge, nsBadge, gsBadge].filter(Boolean).join('');
+    const habitsHtml = hBadges.length ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;">${hBadges.join('')}</div>` : '';
+
+    return `<div class="spoon-recipe-body" style="position:relative;" onclick="openRecipeDetail('${idEsc}')">
+      <button onclick="event.stopPropagation();toggleBookmark('${idEsc}');renderFavsGrid();"
+        style="position:absolute;top:6px;right:6px;z-index:2;background:rgba(246,211,101,.35);backdrop-filter:blur(4px);border:none;border-radius:50%;width:28px;height:28px;font-size:.9rem;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;">⭐</button>
+      ${r.photo && !r.photo.startsWith('data:')
+        ? `<img src="${r.photo}" data-cands="${(r.photoCandidates||[]).join('|')}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--rs) var(--rs) 0 0;" loading="lazy" onerror="_imgFallback(this,(this.dataset.cands||'').split('|').filter(c=>c&&c!==this.src),'<div style=\\'width:100%;aspect-ratio:4/3;background:rgba(255,107,107,.08);border-radius:var(--rs) var(--rs) 0 0;display:flex;align-items:center;justify-content:center;font-size:2rem;\\'>${r.emoji||'🍳'}</div>')">`
+        : `<div style="width:100%;aspect-ratio:4/3;background:rgba(255,107,107,.08);border-radius:var(--rs) var(--rs) 0 0;display:flex;align-items:center;justify-content:center;font-size:2rem;">${r.emoji||'🍳'}</div>`}
+      <div style="padding:10px 10px 8px;">
+        <div style="font-weight:800;font-size:.82rem;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${r.name}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">${metaRow}</div>
+        ${habitsHtml}
+      </div></div>`;
+  }).join('');
+
   panel.innerHTML = `<div style="font-size:.68rem;font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">⭐ Mes favoris (${bookmarks.length})</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      ${bookmarks.map(r => `<div style="background:var(--bg);border-radius:var(--rs);box-shadow:var(--so);overflow:hidden;position:relative;">
-        <div onclick="openRecipeDetail('${r.id||r.name}')" style="cursor:pointer;">
-          ${r.photo?`<img src="${r.photo}" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:center top;display:block;" onerror="this.style.display='none'" loading="lazy">`
-                   :`<div style="aspect-ratio:16/9;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:2rem;">${r.emoji||'🍳'}</div>`}
-          <div style="padding:8px 8px 4px;">
-            <div style="font-size:.78rem;font-weight:800;line-height:1.3;">${r.name}</div>
-            <div style="font-size:.62rem;color:var(--tx2);margin-top:2px;">${r.time?r.time+'min · ':''}${r.kcal?r.kcal+'kcal':''}</div>
-          </div>
-        </div>
-        <button onclick="toggleBookmark('${r.id||r.name}');renderFavsGrid();" style="position:absolute;top:6px;right:6px;background:rgba(246,211,101,.3);border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">⭐</button>
-      </div>`).join('')}
-    </div>`;
+    <div class="spoon-grid">${cardsHtml}</div>`;
 }
 
 function openCustomRecipeDetail(id) {
