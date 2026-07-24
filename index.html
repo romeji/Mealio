@@ -2137,7 +2137,7 @@ const FIREBASE_CONFIG = {
 // URL de base de l'API serverless (Vercel) — les endpoints /api/... ne sont
 // jamais exécutables tels quels sur GitHub Pages (hébergement statique
 // uniquement, aucun backend possible) donc on force le domaine complet.
-const API_BASE = 'https://smartcard-eosin.vercel.app';
+const API_BASE = window.location.origin;
 // Note sécurité : l'ancienne clé ANTHROPIC_KEY exposée en clair ici a été
 // retirée — elle n'était d'ailleurs jamais utilisée (les appels /api/claude
 // passent déjà par le backend Vercel qui détient la vraie clé côté serveur).
@@ -5809,8 +5809,7 @@ function openPremiumModal(featureName) {
       + '<div style="font-size:1.2rem;font-weight:900;color:#fda085;">' + pl.price + '</div>'
       + '<div style="font-size:.62rem;color:var(--tx2);">' + pl.desc + '</div></div>';
   }).join('');
-  overlay.innerHTML = '<div style="background:var(--bg);border-radius:24px 24px 0 0;padding:24px 20px calc(28px + env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:90vh;overflow-y:auto;"><div style="width:40px;height:4px;background:var(--bg2);border-radius:2px;margin:0 auto 18px;"></div><div style="text-align:center;margin-bottom:18px;"><div style="font-size:2.5rem;margin-bottom:6px;">⭐</div><div style="font-size:1.15rem;font-weight:900;background:linear-gradient(135deg,#f6d365,#fda085);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">SmartCard Premium</div><div style="font-size:.8rem;color:var(--tx2);margin-top:5px;">'+fHtml+'</div></div><div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px;">'+perksHtml+'</div><div style="display:flex;gap:10px;margin-bottom:14px;">'+plansHtml+'</div><button onclick="activatePremium()" style="width:100%;padding:15px;border:none;border-radius:16px;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;font-weight:900;font-size:.9rem;cursor:pointer;margin-bottom:8px;">✨ Essai gratuit 7 jours</button><div style="font-size:.62rem;color:var(--tx3);text-align:center;margin-bottom:12px;">Annulez à tout moment · Sans engagement</div><div style="display:flex;gap:8px;margin-bottom:8px;"><input id="premPromoInput" class="inp" placeholder="Code promo…" style="flex:1;font-size:.78rem;"><button onclick="applyPromoCode()" class="btn sm">Appliquer</button></div><button onclick="restorePremium()" style="width:100%;padding:10px;border:none;background:none;color:var(--tx2);font-size:.73rem;cursor:pointer;text-decoration:underline;">Restaurer un achat</button><button onclick="document.getElementById(\'premiumModal\').remove()" style="width:100%;padding:9px;border:none;background:none;color:var(--tx3);font-size:.7rem;cursor:pointer;">Pas maintenant</button></div>';
-  overlay.innerHTML = overlay.innerHTML.replace('SmartCard Premium', 'Mealio Premium');
+  overlay.innerHTML = '<div style="background:var(--bg);border-radius:24px 24px 0 0;padding:24px 20px calc(28px + env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:90vh;overflow-y:auto;"><div style="width:40px;height:4px;background:var(--bg2);border-radius:2px;margin:0 auto 18px;"></div><div style="text-align:center;margin-bottom:18px;"><div style="font-size:2.5rem;margin-bottom:6px;">⭐</div><div style="font-size:1.15rem;font-weight:900;background:linear-gradient(135deg,#f6d365,#fda085);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Mealio Premium</div><div style="font-size:.8rem;color:var(--tx2);margin-top:5px;">'+fHtml+'</div></div><div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px;">'+perksHtml+'</div><div style="display:flex;gap:10px;margin-bottom:14px;">'+plansHtml+'</div><button onclick="activatePremium()" style="width:100%;padding:15px;border:none;border-radius:16px;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;font-weight:900;font-size:.9rem;cursor:pointer;margin-bottom:8px;">✨ Essai gratuit 7 jours</button><div style="font-size:.62rem;color:var(--tx3);text-align:center;margin-bottom:12px;">Annulez à tout moment · Sans engagement</div><div style="display:flex;gap:8px;margin-bottom:8px;"><input id="premPromoInput" class="inp" placeholder="Code promo…" style="flex:1;font-size:.78rem;"><button onclick="applyPromoCode()" class="btn sm">Appliquer</button></div><button onclick="restorePremium()" style="width:100%;padding:10px;border:none;background:none;color:var(--tx2);font-size:.73rem;cursor:pointer;text-decoration:underline;">Restaurer un achat</button><button onclick="document.getElementById(\'premiumModal\').remove()" style="width:100%;padding:9px;border:none;background:none;color:var(--tx3);font-size:.7rem;cursor:pointer;">Pas maintenant</button></div>';
   overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
   document.body.appendChild(overlay);
 }
@@ -5874,7 +5873,7 @@ function _pollPremiumActivation() {
 
 function applyPromoCode() {
   const code = (document.getElementById('premPromoInput')?.value||'').trim().toUpperCase();
-  const codes = {'SMARTCARD2024':90,'BETA50':30,'PREMIUM':365,'FRIGO':30,'PROMO2025':14};
+  const codes = {'MEALIO2026':90,'BETA50':30,'PREMIUM':365,'FRIGO':30,'PROMO2025':14};
   if(codes[code]) {
     state.premium = {active:true,plan:'promo',expiresAt:Date.now()+codes[code]*24*3600*1000,activatedAt:Date.now()};
     saveState(); document.getElementById('premiumModal')?.remove();

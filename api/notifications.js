@@ -77,7 +77,7 @@ function fill(template, payload) {
 function allowedOrigin(origin) {
   if (!origin) return '*';
   const allowed = [
-    'https://smartcard-eosin.vercel.app',
+    'https://mealio-fr.vercel.app',
     'https://romeji.github.io',
     'http://localhost:3000',
     'http://localhost:3001',

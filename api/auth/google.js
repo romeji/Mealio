@@ -1,7 +1,7 @@
 // api/auth/google.js — Démarre le flow Google OAuth
 export default function handler(req, res) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const baseUrl = "https://smartcard-eosin.vercel.app";
+  const baseUrl = process.env.APP_ORIGIN || "https://mealio-fr.vercel.app";
   const redirectUri = baseUrl + "/api/auth/callback";
 
   if (!clientId) {

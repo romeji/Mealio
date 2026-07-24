@@ -3,7 +3,7 @@ import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 
 // All credentials from Vercel environment variables (secure)
-const BASE_URL = "https://smartcard-eosin.vercel.app";
+  const BASE_URL = process.env.APP_ORIGIN || "https://mealio-fr.vercel.app";
 const REDIRECT_URI = BASE_URL + "/api/auth/callback";
 
 function getAdmin() {
