@@ -2636,6 +2636,16 @@ async function loginGoogle() {
     showAuthError('Connexion Google momentanément indisponible.');
     return;
   }
+  const canUseSessionStorage = (() => {
+    try {
+      const key = '__mealio_auth_test__';
+      window.sessionStorage.setItem(key, '1');
+      window.sessionStorage.removeItem(key);
+      return true;
+    } catch(_) {
+      return false;
+    }
+  })();
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt: 'select_account'});
   try {
@@ -2643,7 +2653,7 @@ async function loginGoogle() {
     // client OAuth personnalisé qui pouvait être bloqué par Google.
     await auth.signInWithPopup(provider);
   } catch(e) {
-    if(['auth/popup-blocked','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].includes(e.code)) {
+    if(['auth/popup-blocked','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].includes(e.code) && canUseSessionStorage) {
       try {
         await auth.signInWithRedirect(provider);
         return;
@@ -2655,9 +2665,13 @@ async function loginGoogle() {
       'auth/popup-closed-by-user': 'Connexion annulée.',
       'auth/unauthorized-domain': 'Ce domaine doit être ajouté aux domaines autorisés dans Firebase.',
       'auth/account-exists-with-different-credential': 'Un compte existe déjà avec cette adresse email.',
-      'auth/operation-not-allowed': 'Activez Google dans Firebase Authentication.'
+      'auth/operation-not-allowed': 'Activez Google dans Firebase Authentication.',
+      'auth/web-storage-unsupported': 'Ce navigateur bloque le stockage nécessaire à Google. Ouvrez Mealio dans Chrome, Safari ou installez la PWA.'
     };
-    showAuthError(messages[e.code] || 'Connexion Google impossible. Réessayez.');
+    const storageBlocked = !canUseSessionStorage || /sessionStorage|initial state|storage/i.test(e.message || '');
+    showAuthError(storageBlocked
+      ? 'Ce navigateur intégré bloque la connexion Google. Ouvrez mealio-fr.vercel.app dans Chrome, Safari ou la PWA.'
+      : (messages[e.code] || 'Connexion Google impossible. Réessayez.'));
     console.error('Google sign-in:', e.code, e.message);
   }
 }
