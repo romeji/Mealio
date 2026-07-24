@@ -389,7 +389,8 @@ svg{display:block;flex-shrink:0;}
 .sp-orb2{position:absolute;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(0,210,198,.12),transparent 70%);bottom:-30px;left:-30px;}
 .sp-orb3{position:absolute;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(255,107,157,.1),transparent 70%);top:30%;left:-40px;}
 .sp{position:relative;z-index:2;text-align:center;animation:fup .9s cubic-bezier(.34,1.56,.64,1) both;}
-.sp-logo{width:96px;height:96px;border-radius:28px;background:var(--grad);margin:0 auto 22px;display:flex;align-items:center;justify-content:center;box-shadow:8px 8px 24px rgba(255,107,107,.4),-4px -4px 14px rgba(255,255,255,.7);animation:pulse 2s ease-in-out infinite;}
+.sp-logo{width:96px;height:96px;border-radius:28px;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:8px 8px 24px rgba(255,107,107,.4),-4px -4px 14px rgba(255,255,255,.7);animation:pulse 2s ease-in-out infinite;}
+.sp-logo img{width:100%;height:100%;object-fit:cover;display:block}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 .sp-nm{font-size:2.2rem;font-weight:900;color:var(--tx);letter-spacing:-1.5px;}
 .sp-nm span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
@@ -1100,7 +1101,29 @@ body.offline-mode .offline-banner{display:block;}
   .daily-meta{display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:.58rem;color:var(--tx3);margin-top:6px}
   .daily-pill{padding:2px 5px;border-radius:99px;background:rgba(230,126,34,.12);color:#d96c10;font-weight:800}
   .daily-loading,.daily-empty{grid-column:1/-1;text-align:center;padding:20px 10px;font-size:.74rem;color:var(--tx2)}
-  @media(max-width:560px){.daily-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 1px 8px}.daily-card{min-width:72%;scroll-snap-align:start}}
+  @media(max-width:560px){
+    .daily-recipes{margin:12px 0 16px;padding:13px 12px 12px;border-radius:18px}
+    .daily-head{align-items:center;gap:8px;margin-bottom:10px}
+    .daily-head>div{min-width:0}
+    .daily-kicker{font-size:.56rem;line-height:1.35;letter-spacing:.065em}
+    .daily-head h2{font-size:1rem;margin:2px 0}
+    #dailyRecipesSubtitle{font-size:.64rem;line-height:1.35}
+    .daily-head .btn{width:42px;height:42px;min-width:42px;padding:0;border-radius:13px;font-size:1.05rem}
+    .daily-grid{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:1px;padding:2px 1px 8px;overscroll-behavior-x:contain;scrollbar-width:none}
+    .daily-grid::-webkit-scrollbar{display:none}
+    .daily-card{display:grid;grid-template-columns:42% minmax(0,1fr);min-width:min(88%,340px);min-height:128px;scroll-snap-align:start;scroll-snap-stop:always}
+    .daily-card img,.daily-placeholder{height:100%;min-height:128px;aspect-ratio:auto}
+    .daily-placeholder{font-size:1.7rem}
+    .daily-body{padding:11px 10px;align-self:center;min-width:0}
+    .daily-title{font-size:.76rem;line-height:1.3}
+    .daily-reason{font-size:.6rem;line-height:1.3;margin-top:5px}
+    .daily-meta{font-size:.56rem;margin-top:7px}
+    .daily-pill{padding:2px 6px}
+  }
+  @media(max-width:350px){
+    .daily-card{grid-template-columns:40% minmax(0,1fr);min-width:94%}
+    .daily-reason{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  }
 </style>
 </head>
 <body>
@@ -1109,10 +1132,8 @@ body.offline-mode .offline-banner{display:block;}
 <div id="splash">
   <div class="sp-orb"></div><div class="sp-orb2"></div><div class="sp-orb3"></div>
   <div class="sp">
-    <div class="sp-logo">
-      <svg width="46" height="46" viewBox="0 0 44 44" fill="none"><path d="M7 11h5l6 17h11l4-11H13" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.5" fill="#fff"/><circle cx="28" cy="33" r="2.5" fill="#fff"/></svg>
-    </div>
-    <div class="sp-nm">Smart<span>Card</span></div>
+    <div class="sp-logo"><img src="/mealio-logo-final.png" alt="Logo Mealio"></div>
+    <div class="sp-nm">Meal<span>io</span></div>
     <div class="sp-sub">Courses intelligentes 🛒</div>
     <div class="sp-dots"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
   </div>
@@ -1272,7 +1293,7 @@ body.offline-mode .offline-banner{display:block;}
   <div class="topbar">
     <div class="tb-logo">
         <div class="tb-logo-ic"><img src="/mealio-logo-final.png" alt=""></div>
-      <div class="tb-logo-tx">Smart<span>Card</span></div>
+      <div class="tb-logo-tx">Meal<span>io</span></div>
     </div>
     <div id="syncBadge" style="display:none;font-size:.62rem;color:var(--tl);font-weight:700;background:rgba(0,210,198,.1);padding:4px 8px;border-radius:99px;">🔄 Sync</div>
     <div id="foyerBadge" style="display:none;font-size:.62rem;color:var(--bl);font-weight:700;background:rgba(52,152,219,.1);padding:4px 8px;border-radius:99px;cursor:pointer;" onclick="showFoyerModal()">👨‍👩‍👧 Foyer</div>
