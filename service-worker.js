@@ -11,7 +11,7 @@ firebase.initializeApp({
 });
 firebase.messaging();
 
-const CACHE = 'mealio-shell-v9';
+const CACHE = 'mealio-shell-v10';
 const APP_SHELL = [
   './',
   './index.html',
@@ -24,7 +24,7 @@ const APP_SHELL = [
   './notifications.js',
   './ingredients.js',
   './manifest.webmanifest',
-  './mealio-icon.svg'
+  './mealio-logo-final.png'
 ];
 
 self.addEventListener('install', (event) => {

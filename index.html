@@ -10,27 +10,16 @@
 <meta name="apple-mobile-web-app-title" content="Mealio">
 <meta name="theme-color" content="#ff6b6b">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect width='44' height='44' rx='10' fill='%23ff6b6b'/%3E%3Cpath d='M7 11h5l6 17h11l4-11H13' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='17' cy='33' r='2.5' fill='white'/%3E%3Ccircle cx='28' cy='33' r='2.5' fill='white'/%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23ff6b6b'/%3E%3Cpath d='M30 45h20l24 69h44l16-44H52' stroke='white' stroke-width='10' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='70' cy='135' r='10' fill='white'/%3E%3Ccircle cx='114' cy='135' r='10' fill='white'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="/mealio-logo-final.png">
+<link rel="apple-touch-icon" href="/mealio-logo-final.png">
 <script>
 (function(){
-  function buildIcon(color){
-    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='" + encodeURIComponent(color) + "'/%3E%3Cpath d='M24 44h24l28 70h48l20-50H48' stroke='white' stroke-width='12' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='71' cy='138' r='12' fill='white'/%3E%3Ccircle cx='118' cy='138' r='12' fill='white'/%3E%3C/svg%3E";
-  }
   try{
     const savedTheme = localStorage.getItem('sc_theme');
     if(savedTheme && savedTheme !== 'light') document.documentElement.dataset.theme = savedTheme;
     const darkThemes = ['dark','anthracite'];
     const isDark = darkThemes.includes(savedTheme) || (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    const accentMap = {dark:'#ff8e53',anthracite:'#6c8ebf',rouge:'#e74c3c',violet:'#8e44ad',ocean:'#2980b9',green:'#27ae60',};
-    const iconColor = accentMap[savedTheme] || '#ff6b6b';
-    const themeColor = isDark ? '#14161a' : iconColor;
-    const icon = buildIcon(iconColor);
-    // Update existing favicon
-    const existing = document.querySelector('link[rel="icon"]');
-    if(existing) existing.href = icon;
-    const apple = document.querySelector('link[rel="apple-touch-icon"]');
-    if(apple) apple.href = icon;
+    const themeColor = isDark ? '#14161a' : '#ff7043';
     // Update theme-color meta
     const tc = document.querySelector('meta[name="theme-color"]');
     if(tc) tc.content = themeColor;
@@ -419,7 +408,8 @@ svg{display:block;flex-shrink:0;}
 .auth-page.hidden-right{transform:translateX(100%);opacity:0;pointer-events:none;}
 .aw{max-width:420px;margin:0 auto;padding:50px 24px 70px;}
 .a-logo{display:flex;align-items:center;gap:13px;margin-bottom:40px;}
-.a-logo-ic{width:48px;height:48px;border-radius:15px;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:4px 4px 12px rgba(255,107,107,.3);}
+.a-logo-ic{width:48px;height:48px;border-radius:15px;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:4px 4px 12px rgba(255,107,107,.3);}
+.a-logo-ic img,.tb-logo-ic img{width:100%;height:100%;object-fit:cover;display:block}
 .a-logo-tx{font-size:1.4rem;font-weight:900;color:var(--tx);}
 .a-logo-tx span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .a-h{font-size:1.9rem;font-weight:900;color:var(--tx);line-height:1.2;margin-bottom:8px;}
@@ -455,7 +445,7 @@ svg{display:block;flex-shrink:0;}
 .tab.on{background:var(--grad);box-shadow:inset 2px 2px 5px rgba(0,0,0,.1);color:#fff;}
 .tab-lb{font-size:.5rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;}
 .tb-logo{display:flex;align-items:center;gap:9px;}
-.tb-logo-ic{width:38px;height:38px;border-radius:13px;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 10px rgba(255,107,107,.3);}
+.tb-logo-ic{width:38px;height:38px;border-radius:13px;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 10px rgba(255,107,107,.3);}
 .tb-logo-tx{font-size:1.1rem;font-weight:900;color:var(--tx);}
 .tb-logo-tx span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .tb-r{margin-left:auto;display:flex;gap:8px;align-items:center;}
@@ -1134,7 +1124,7 @@ body.offline-mode .offline-banner{display:block;}
   <div class="auth-page" id="authLogin">
     <div class="aw">
       <div class="a-logo">
-        <div class="a-logo-ic"><svg width="22" height="22" viewBox="0 0 44 44" fill="none"><path d="M7 11h5l6 17h11l4-11H13" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.5" fill="#fff"/><circle cx="28" cy="33" r="2.5" fill="#fff"/></svg></div>
+        <div class="a-logo-ic"><img src="/mealio-logo-final.png" alt="Logo Mealio"></div>
         <div class="a-logo-tx">Meal<span>io</span></div>
         <span style="font-size:.6rem;color:var(--tx3);margin-left:auto;font-weight:700;">v3.0</span>
       </div>
@@ -1281,7 +1271,7 @@ body.offline-mode .offline-banner{display:block;}
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="tb-logo">
-      <div class="tb-logo-ic"><svg width="20" height="20" viewBox="0 0 44 44" fill="none"><path d="M7 11h5l6 17h11l4-11H13" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.5" fill="#fff"/><circle cx="28" cy="33" r="2.5" fill="#fff"/></svg></div>
+        <div class="tb-logo-ic"><img src="/mealio-logo-final.png" alt=""></div>
       <div class="tb-logo-tx">Smart<span>Card</span></div>
     </div>
     <div id="syncBadge" style="display:none;font-size:.62rem;color:var(--tl);font-weight:700;background:rgba(0,210,198,.1);padding:4px 8px;border-radius:99px;">🔄 Sync</div>

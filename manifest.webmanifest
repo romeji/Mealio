@@ -13,9 +13,9 @@
   "categories": ["food", "shopping", "lifestyle"],
   "icons": [
     {
-      "src": "mealio-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "mealio-logo-final.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
