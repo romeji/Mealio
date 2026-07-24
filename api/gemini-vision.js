@@ -1,13 +1,14 @@
 // api/gemini-vision.js — Vision avec fallback automatique Gemini → Claude
+import { applyPrivateCors, requireUser } from './_auth.js';
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  applyPrivateCors(req, res);
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+  if (!await requireUser(req, res)) return;
 
   const { imageBase64, mimeType = 'image/jpeg', prompt } = req.body || {};
   if (!imageBase64) { res.status(400).json({ error: 'Missing imageBase64' }); return; }
+  if (imageBase64.length > 4_000_000) { res.status(413).json({ error: 'Image too large' }); return; }
 
   const defaultPrompt = `Analyse cette photo de frigo ou d'aliments. Liste tous les aliments visibles.
 Réponds UNIQUEMENT en JSON valide sans balises markdown:

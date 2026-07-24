@@ -1,5 +1,5 @@
 {
-  "name": "smartcart",
+  "name": "mealio",
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
@@ -8,6 +8,7 @@
   "scripts": {
     "start": "vercel dev",
     "build": "echo build",
+    "test": "node --test tests/*.test.mjs",
     "deploy": "vercel --prod"
   }
 }

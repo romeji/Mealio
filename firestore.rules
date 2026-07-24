@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+    function isHouseMember(houseId) {
+      return signedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/households/$(houseId)).data.memberUids;
+    }
+
+    match /users/{uid} {
+      allow read, create, update, delete: if isSelf(uid);
+      match /{document=**} {
+        allow read, write: if isSelf(uid);
+      }
+    }
+
+    match /households/{houseId} {
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.auth.uid in request.resource.data.memberUids;
+      allow read, update: if signedIn() && request.auth.uid in resource.data.memberUids;
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Les codes ne sont jamais lisibles depuis le navigateur : la jonction
+    // est effectuée par /api/household-join avec Firebase Admin.
+    match /houseCodes/{code} {
+      allow read: if false;
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /household_invites/{inviteId} {
+      allow create: if signedIn() && isHouseMember(request.resource.data.houseId);
+      allow read: if signedIn() &&
+        (resource.data.invitedEmail == request.auth.token.email ||
+         isHouseMember(resource.data.houseId));
+      allow update: if signedIn() &&
+        (resource.data.invitedEmail == request.auth.token.email ||
+         isHouseMember(resource.data.houseId));
+      allow delete: if signedIn() && isHouseMember(resource.data.houseId);
+    }
+
+    match /recipes/{recipeId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.savedBy == request.auth.uid
+        && request.resource.data.name is string;
+      allow update: if signedIn()
+        && (resource.data.savedBy == request.auth.uid ||
+            request.resource.data.savedBy == request.auth.uid);
+      allow delete: if signedIn() && resource.data.savedBy == request.auth.uid;
+    }
+
+    match /menu_history/{entryId} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if signedIn() &&
+        (resource.data.uid == request.auth.uid ||
+         (resource.data.houseId != null && isHouseMember(resource.data.houseId)));
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -3,7 +3,7 @@
 // rouge animé, flash vert, fallback capture photo). Ne PAS les redéfinir
 // ici pour éviter tout écrasement silencieux au chargement des scripts.
 
-/* SMARTCARD — MODULE SCAN */
+/* FRIGOLY — MODULE SCAN */
 
 // API_BASE est déjà déclarée dans index.html (chargé avant ce fichier) —
 // NE PAS la redéclarer ici avec `const`, cela provoque une SyntaxError
@@ -148,7 +148,7 @@ async function askMistralAI(lines) {
     setOCRProgress(82, 'Correction Mistral AI (' + uncached.length + ' articles)...');
 
     try {
-      const res = await fetch(API_BASE + '/api/mistral-correct', {
+      const res = await mealioApiFetch(API_BASE + '/api/mistral-correct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lines: uncached }),
@@ -254,7 +254,7 @@ async function runTicketAnalysis() {
       const fr = new FileReader(); fr.onload=e=>img.src=e.target.result; fr.readAsDataURL(file);
     });
 
-    const resp = await fetch(API_BASE + '/api/gemini-vision', {
+    const resp = await mealioApiFetch(API_BASE + '/api/gemini-vision', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -730,7 +730,9 @@ function confirmTicketToList() {
   const data = getTicketData();
   if(data.items.length === 0) { showToast('⚠️','Aucun article sélectionné','Cochez au moins un article.'); return; }
   data.items.forEach(it => {
-    const ex = state.items.find(si => si.name.toLowerCase() === it.name.toLowerCase());
+    const ex = state.items.find(si =>
+      window.MealioQuality?.foodMatches(si.name, it.name) || si.name.toLowerCase() === it.name.toLowerCase()
+    );
     if(ex) { ex.qty = String((parseInt(ex.qty)||1) + 1); }
     else {
       state.items.unshift({
@@ -744,7 +746,6 @@ function confirmTicketToList() {
   saveItems();
   renderList();
   saveTicketHistory(data);
-  addTicketToFridgeItems(data.items);
   showToast('✅', data.items.length + ' article(s) ajouté(s)', data.store || 'Ticket analysé');
   resetTicketScan();
   switchTab('liste');
@@ -766,7 +767,9 @@ function confirmTicketToFridge() {
 
 function addTicketToFridgeItems(items) {
   items.forEach(it => {
-    const ex = state.fridge.find(f => f.name.toLowerCase() === it.name.toLowerCase());
+    const ex = state.fridge.find(f =>
+      window.MealioQuality?.foodMatches(f.name, it.name) || f.name.toLowerCase() === it.name.toLowerCase()
+    );
     if(ex) { ex.qty = (parseInt(ex.qty)||1) + 1; }
     else { state.fridge.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5), name:it.name, emoji:it.emoji||'🛒', qty:1, cat:it.cat||'🍝 Épicerie'}); }
   });
@@ -785,6 +788,10 @@ async function saveTicketHistory(data) {
     source: '🧾 ' + (data.store || 'Ticket')
   };
   state.history.unshift(entry);
+  window.MealioNotifications?.emit('receipt_imported', {
+    store: data.store || 'un magasin',
+    count: data.items.length
+  }, 'receipt_imported_' + entry.timestamp);
   if(state.history.length > 30) state.history.pop();
   saveHistory();
   if(db && currentUser) {
@@ -1004,7 +1011,7 @@ async function _runFridgeScan(file) {
 
     setStatus('Identification des aliments…');
 
-    const resp = await fetch(API_BASE + '/api/gemini-vision', {
+    const resp = await mealioApiFetch(API_BASE + '/api/gemini-vision', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1012,9 +1019,11 @@ async function _runFridgeScan(file) {
         mimeType: 'image/jpeg',
         prompt: `You are a food detection API. Look at this image and return ONLY a JSON object. No explanation, no markdown, no text. Start with { and end with }.
 
-{"aliments":[{"nom":"Tomates","emoji":"🍅","quantite":"4"},{"nom":"Lait","emoji":"🥛","quantite":"1L"},{"nom":"Fromage","emoji":"🧀","quantite":"200g"}]}
+{"aliments":[{"nom":"Tomates","emoji":"🍅","quantite":"4","categorie":"🥦 Légumes","confiance":0.93},{"nom":"Lait","emoji":"🥛","quantite":"1L","categorie":"🥛 Produits laitiers","confiance":0.82}]}
 
-Detect every visible food item. Use French names. Maximum 20 items. Return ONLY the JSON.`
+Detect every clearly visible food item. Do not invent hidden items or brands. Merge duplicates.
+Use concise generic French names, estimate quantity only when visible, and add a confidence from 0 to 1.
+Maximum 20 items. Return ONLY the JSON.`
       })
     });
 
@@ -1047,7 +1056,9 @@ Detect every visible food item. Use French names. Maximum 20 items. Return ONLY 
         emoji:    i.emoji || '🥗',
         quantite: i.quantite || i.qty || i.quantity || '',
         categorie:i.categorie || i.category || '',
+        confiance:i.confiance ?? i.confidence ?? 0.65,
       })).filter(i => i.nom.length > 1);
+      aliments = window.MealioQuality?.mergeDetectedFoods(aliments) || aliments;
     } catch(e) {
       throw new Error('JSON malformé: ' + e.message + ' — ' + jsonStr.slice(0, 100));
     }
@@ -1075,7 +1086,9 @@ function _showFridgeScanResults(aliments) {
     emoji:    a.emoji || '🥗',
     quantite: a.quantite || a.qty || a.quantity || a.measure || '',
     categorie:a.categorie || a.category || '',
+    confidence:Number(a.confidence ?? a.confiance ?? 0.65),
   })).filter(a => a.nom && a.nom !== '?' && a.nom.length > 1);
+  aliments = window.MealioQuality?.mergeDetectedFoods(aliments) || aliments;
 
   console.log('[scan] _showFridgeScanResults received:', aliments.length, 'items:', aliments);
 
@@ -1091,7 +1104,8 @@ function _showFridgeScanResults(aliments) {
   sheet.id = '_fridgeScanSheet';
   sheet.style.cssText = 'position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;';
 
-  const selected = new Set(aliments.map((_, i) => i));
+  // Les détections incertaines restent visibles, mais doivent être confirmées.
+  const selected = new Set(aliments.map((a, i) => a.confidence >= 0.55 ? i : null).filter(i => i !== null));
   window._fridgeScanSelected = selected;
   window._fridgeScanCount = aliments.length;
   window._fridgeScanAliments = aliments; // store for _addSelectedFridgeItems
@@ -1108,16 +1122,20 @@ function _showFridgeScanResults(aliments) {
       </div>
     </div>
     <div style="overflow-y:auto;flex:1;padding:12px 14px;" id="_fridgeScanList">
-      ${aliments.map((a, i) => `
-        <div id="_fridgeItem_${i}" onclick="_toggleFridgeItem(${i})" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;margin-bottom:6px;cursor:pointer;background:rgba(0,210,198,.1);border:1.5px solid rgba(0,210,198,.3);transition:all .15s;">
+      ${aliments.map((a, i) => {
+        const safe = window.MealioQuality?.escapeHtml || (v => String(v));
+        const confidence = Math.round((a.confidence || 0.65) * 100);
+        const checked = selected.has(i);
+        return `
+        <div id="_fridgeItem_${i}" onclick="_toggleFridgeItem(${i})" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;margin-bottom:6px;cursor:pointer;background:${checked?'rgba(0,210,198,.1)':'var(--bg2)'};border:1.5px solid ${checked?'rgba(0,210,198,.3)':'transparent'};transition:all .15s;">
           <div style="font-size:1.4rem;flex-shrink:0;">${a.emoji}</div>
           <div style="flex:1;">
-            <div style="font-weight:800;font-size:.88rem;">${a.nom}</div>
-            ${a.quantite ? `<div style="font-size:.68rem;color:var(--tx2);">${a.quantite}</div>` : ''}
+            <div style="font-weight:800;font-size:.88rem;">${safe(a.nom)}</div>
+            <div style="font-size:.68rem;color:var(--tx2);">${a.quantite ? safe(a.quantite)+' · ' : ''}${confidence}% de confiance${confidence<55?' · à vérifier':''}</div>
           </div>
-          <div id="_fridgeCheck_${i}" style="width:22px;height:22px;border-radius:50%;background:var(--tl);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:900;flex-shrink:0;">✓</div>
+          <div id="_fridgeCheck_${i}" style="width:22px;height:22px;border-radius:50%;background:${checked?'var(--tl)':'var(--bg)'};display:flex;align-items:center;justify-content:center;color:${checked?'#fff':'var(--tx3)'};font-size:.75rem;font-weight:900;flex-shrink:0;">${checked?'✓':''}</div>
         </div>
-      `).join('')}
+      `}).join('')}
     </div>
     <div style="padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--bg2);flex-shrink:0;display:flex;gap:8px;">
       <button onclick="_selectAllFridgeItems(${aliments.length})" class="btn" style="flex:1;padding:11px;border-radius:12px;font-size:.8rem;">Tout sélectionner</button>
@@ -1167,7 +1185,9 @@ function _addSelectedFridgeItems(aliments) {
     if(!sel.has(i)) return;
     const nom = a.nom || a.name || '';
     if(!nom) return;
-    const existing = state.fridge.find(f => f.name.toLowerCase() === nom.toLowerCase());
+    const existing = state.fridge.find(f =>
+      window.MealioQuality?.foodMatches(f.name, nom) || f.name.toLowerCase() === nom.toLowerCase()
+    );
     if(existing) {
       existing.qty = (parseInt(existing.qty)||1) + 1;
     } else {
@@ -1224,8 +1244,8 @@ try { barcodeHistory = JSON.parse(localStorage.getItem('sc_barcode_history') || 
 async function lookupBarcode(code) {
   const inp = document.getElementById('barcodeInput');
   const barcode = (code || (inp ? inp.value.trim().replace(/\D/g,'') : '')).trim();
-  if(!barcode || barcode.length < 8) {
-    showToast('⚠️','Code invalide','Minimum 8 chiffres.');
+  if(!window.MealioQuality?.isValidBarcode(barcode)) {
+    showToast('⚠️','Code invalide','Le code EAN/UPC est incomplet ou sa clé de contrôle est incorrecte.');
     return;
   }
   if(inp) inp.value = barcode;
@@ -1237,10 +1257,7 @@ async function lookupBarcode(code) {
     if(r) r.scrollIntoView({behavior:'smooth', block:'nearest'});
   }, 100);
   try {
-    const resp = await fetch(
-      `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=product_name,brands,image_url,nutriscore_grade,ecoscore_grade,nova_group,nutriments,allergens_tags,labels_tags,additives_tags,categories_tags,quantity,ingredients_text_fr`,
-      { headers: { 'User-Agent': 'SmartCard/3.0 - contact: smartcard-app' } }
-    );
+    const resp = await fetch(API_BASE + '/api/product?barcode=' + encodeURIComponent(barcode));
     const data = await resp.json();
     if(data.status !== 1 || !data.product) {
       showBarcodeError(`Code <strong>${barcode}</strong> non trouvé dans Open Food Facts.<br>Ce produit n'est peut-être pas encore référencé.`);

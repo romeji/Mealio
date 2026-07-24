@@ -1,84 +1,78 @@
-// Vercel Edge Function — Stripe Webhook
-// Gère les événements de paiement Stripe et met à jour Firebase Firestore
-// Variables requises : STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, FIREBASE_SERVICE_ACCOUNT
+import crypto from 'node:crypto';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
-export const config = { runtime: 'edge' };
+export const config = { api: { bodyParser: false } };
 
-export default async function handler(req) {
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
-  }
-
-  const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
-  const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY;
-  const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'smartcard-4c62c';
-
-  // Verify Stripe signature
-  const signature = req.headers.get('stripe-signature');
-  const body = await req.text();
-
-  // In production: verify with stripe.webhooks.constructEvent()
-  // For now, parse directly (add verification in prod)
-  let event;
-  try {
-    event = JSON.parse(body);
-  } catch (e) {
-    return new Response('Invalid JSON', { status: 400 });
-  }
-
-  // Handle successful payment
-  if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
-    const session = event.data?.object;
-    const userId = session?.client_reference_id || session?.metadata?.userId;
-    const plan = session?.metadata?.plan || 'monthly';
-
-    if (userId && FIREBASE_PROJECT_ID) {
-      // Update user premium status in Firestore via REST API
-      const expiresAt = Date.now() + (plan === 'yearly' ? 365 : 30) * 24 * 3600 * 1000;
-      const premiumData = {
-        fields: {
-          premium: {
-            mapValue: {
-              fields: {
-                active: { booleanValue: true },
-                plan: { stringValue: plan },
-                expiresAt: { integerValue: String(expiresAt) },
-                activatedAt: { integerValue: String(Date.now()) },
-                stripeSessionId: { stringValue: session?.id || '' },
-              }
-            }
-          },
-          updatedAt: { integerValue: String(Date.now()) },
-        }
-      };
-
-      try {
-        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${userId}`;
-        await fetch(firestoreUrl + '?updateMask.fieldPaths=premium&updateMask.fieldPaths=updatedAt', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            // In production: add Authorization header with service account token
-          },
-          body: JSON.stringify(premiumData),
-        });
-        console.log('[Stripe] Premium activated for user:', userId);
-      } catch (e) {
-        console.error('[Stripe] Firestore update failed:', e.message);
-      }
+function getAdminDb() {
+  if (!getApps().length) {
+    const privateKey = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
+      throw new Error('Firebase Admin configuration missing');
     }
+    initializeApp({ credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey,
+    }) });
   }
+  return getFirestore();
+}
 
-  // Handle subscription cancellation
-  if (event.type === 'customer.subscription.deleted') {
-    const userId = event.data?.object?.metadata?.userId;
-    if (userId) {
-      // Deactivate premium in Firestore
-      console.log('[Stripe] Premium cancelled for user:', userId);
-    }
-  }
+async function readRawBody(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks);
+}
 
-  return new Response(JSON.stringify({ received: true }), {
-    headers: { 'Content-Type': 'application/json' },
+function verifyStripeSignature(rawBody, header, secret) {
+  if (!header || !secret) return false;
+  const timestamp = header.match(/(?:^|,)t=(\d+)/)?.[1];
+  const signatures = [...header.matchAll(/(?:^|,)v1=([a-f0-9]+)/gi)].map(match => match[1]);
+  if (!timestamp || !signatures.length || Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
+  const expected = crypto.createHmac('sha256', secret)
+    .update(`${timestamp}.${rawBody.toString('utf8')}`).digest('hex');
+  return signatures.some(signature => {
+    if (signature.length !== expected.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
   });
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).send('Method not allowed');
+  try {
+    const rawBody = await readRawBody(req);
+    if (!verifyStripeSignature(rawBody, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET)) {
+      return res.status(401).send('Invalid Stripe signature');
+    }
+    const event = JSON.parse(rawBody.toString('utf8'));
+    const object = event.data?.object || {};
+    const userId = object.client_reference_id || object.metadata?.userId;
+    if (!userId) return res.status(200).json({ received: true, ignored: 'missing userId' });
+
+    const ref = getAdminDb().collection('users').doc(userId);
+    if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
+      const plan = object.metadata?.plan === 'yearly' ? 'yearly' : 'monthly';
+      const duration = plan === 'yearly' ? 365 : 30;
+      await ref.set({
+        premium: {
+          active: true, plan,
+          expiresAt: Date.now() + duration * 86400000,
+          activatedAt: Date.now(),
+          stripeCustomerId: object.customer || '',
+          stripeSessionId: object.id || '',
+        },
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    } else if (event.type === 'customer.subscription.deleted') {
+      await ref.set({
+        premium: { active: false, cancelledAt: Date.now() },
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
+    return res.status(200).json({ received: true });
+  } catch (error) {
+    console.error('[Stripe webhook]', error.message);
+    return res.status(500).json({ error: 'Webhook processing failed' });
+  }
 }

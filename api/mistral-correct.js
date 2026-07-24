@@ -1,19 +1,22 @@
 // api/mistral-correct.js — Correction de noms de produits OCR via Mistral AI
+import { applyPrivateCors, requireUser } from './_auth.js';
 // La clé API reste côté serveur (variable d'environnement Vercel), jamais
 // exposée dans le code front — contrairement à l'ancienne implémentation où
 // MISTRAL_KEY était en clair dans scan.js et visible par quiconque inspecte
 // le code source.
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  applyPrivateCors(req, res);
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+  if (!await requireUser(req, res)) return;
 
   const { lines } = req.body || {};
   if (!Array.isArray(lines) || !lines.length) {
     res.status(400).json({ error: 'Missing or invalid "lines" array' });
     return;
+  }
+  if (lines.length > 150 || JSON.stringify(lines).length > 30000) {
+    return res.status(413).json({ error: 'Payload too large' });
   }
 
   const MISTRAL_KEY = process.env.MISTRAL_API_KEY;

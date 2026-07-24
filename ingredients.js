@@ -1,4 +1,4 @@
-// SmartCard — Liste d'ingrédients pour l'autocomplétion
+// Mealio — Liste d'ingrédients pour l'autocomplétion
 // Format: { name, emoji, unit, kcal (pour 100g/100ml), category }
 // Utilisé dans : ajout liste de courses, frigo, création recette
 

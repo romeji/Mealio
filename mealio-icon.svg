@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mealio</title>
+  <desc id="desc">Un réfrigérateur souriant avec une feuille fraîche et une étincelle</desc>
+  <defs>
+    <linearGradient id="bg" x1="64" y1="42" x2="448" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8A72"/>
+      <stop offset="1" stop-color="#FF5F6D"/>
+    </linearGradient>
+    <linearGradient id="door" x1="169" y1="130" x2="352" y2="402" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFF6EE"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#9B2F45" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  <circle cx="101" cy="109" r="38" fill="#FFFFFF" opacity=".1"/>
+  <circle cx="425" cy="414" r="58" fill="#7BE0CE" opacity=".16"/>
+  <g filter="url(#shadow)">
+    <rect x="143" y="104" width="226" height="314" rx="58" fill="url(#door)"/>
+    <path d="M143 224h226" stroke="#F4DDD2" stroke-width="15"/>
+    <rect x="319" y="145" width="16" height="58" rx="8" fill="#FF6B6B"/>
+    <rect x="319" y="252" width="16" height="81" rx="8" fill="#FF6B6B"/>
+    <circle cx="218" cy="287" r="10" fill="#30343B"/>
+    <circle cx="290" cy="287" r="10" fill="#30343B"/>
+    <path d="M215 326c22 22 56 22 78 0" fill="none" stroke="#30343B" stroke-width="13" stroke-linecap="round"/>
+  </g>
+  <path d="M326 100c-25-43-71-48-92-41 7 44 38 66 82 58" fill="#39C6AE"/>
+  <path d="M244 69c33 3 56 17 72 43" fill="none" stroke="#138F83" stroke-width="9" stroke-linecap="round"/>
+  <g fill="#FFF7D6">
+    <path d="M395 97l8 23 23 8-23 8-8 23-8-23-23-8 23-8z"/>
+    <circle cx="411" cy="184" r="8"/>
+  </g>
+</svg>

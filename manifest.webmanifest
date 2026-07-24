@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "Mealio — Courses, frigo & recettes",
+  "short_name": "Mealio",
+  "description": "Liste de courses intelligente, gestion du frigo, tickets et recettes personnalisées.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fff6f9",
+  "theme_color": "#ff6b6b",
+  "categories": ["food", "shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "mealio-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

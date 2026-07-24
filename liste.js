@@ -1,4 +1,4 @@
-/* SMARTCARD — MODULE LISTE */
+/* FRIGOLY — MODULE LISTE */
 // LISTE
 // ═══════════════════════════════════════════════
 const CATEGORIES = ['🥛 Laitage','🥩 Viande','🥦 Légumes','🍎 Fruits','🥖 Boulangerie','🐟 Poisson','🧴 Hygiène','🧹 Ménager','🍝 Épicerie','🥤 Boissons','🐾 Animaux'];
@@ -19,6 +19,7 @@ function renderList() {
   const checked = state.items.filter(i => i.checked).length;
   const budgetUsed = state.items.reduce((s,i) => s + (i.price || 0), 0);
   const weekBudget = state.budget || 80;
+  if(typeof updateHomeHub === 'function') updateHomeHub();
 
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statCoche').textContent = checked;
@@ -109,11 +110,15 @@ function itemHTML(item) {
 function toggleCheck(id) {
   const item = state.items.find(i => i.id === id);
   if(!item) return;
+  const shoppingWasIdle = !state.items.some(i => i.checked);
   item.checked = !item.checked;
   item.checkedAt = item.checked ? Date.now() : null;
   saveItems();
   renderList();
   if(state.currentSubtab === 'cart') renderCart();
+  if(item.checked && shoppingWasIdle) {
+    window.MealioNotifications?.emit('shopping_started', {}, 'shopping_started_' + new Date().toISOString().slice(0,10));
+  }
 }
 
 function addItemFromInput() {
@@ -144,6 +149,7 @@ function addItemFromInput() {
   };
   state.items.unshift(item);
   saveItems();
+  window.MealioNotifications?.emit('item_added', {itemName:item.name}, 'item_added_' + item.id);
   inp.value = '';
   document.getElementById('acList').style.display = 'none';
   renderList();
@@ -154,8 +160,10 @@ function addItemByName(name) {
   const prod = PRODUCTS.find(p => p.name.toLowerCase() === name.toLowerCase()) || {name, emoji:'🛒', cat:'🍝 Épicerie', price:0};
   const ex = state.items.find(i => i.name.toLowerCase() === name.toLowerCase() && !i.checked);
   if(ex) { ex.qty = String((parseInt(ex.qty)||1) + 1); saveItems(); renderList(); showToast('🔄', name, 'Quantité +1'); return; }
-  state.items.unshift({id:'i'+Date.now()+Math.random().toString(36).slice(2,7),name:prod.name,emoji:prod.emoji,cat:prod.cat,price:prod.price,qty:'',checked:false,addedAt:Date.now(),addedBy:currentUser?currentUser.email:''});
+  const item = {id:'i'+Date.now()+Math.random().toString(36).slice(2,7),name:prod.name,emoji:prod.emoji,cat:prod.cat,price:prod.price,qty:'',checked:false,addedAt:Date.now(),addedBy:currentUser?currentUser.email:''};
+  state.items.unshift(item);
   saveItems(); renderList();
+  window.MealioNotifications?.emit('item_added', {itemName:item.name}, 'item_added_' + item.id);
   showToast('✅', prod.name, 'Ajouté à la liste.');
 }
 
@@ -245,6 +253,7 @@ function finishShopping() {
     });
     state.items = state.items.filter(i => !i.checked);
     saveItems(); saveFridge(); saveHistory();
+    window.MealioNotifications?.emit('shopping_completed', {count:checked.length}, 'shopping_completed_' + session.timestamp);
     renderList(); renderFridge(); renderCart(); renderHistory();
     showToast('🎉', 'Course terminée !', 'Articles ajoutés au frigo et à l\'historique.');
     switchSubtab('done');

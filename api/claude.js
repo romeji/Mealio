@@ -1,17 +1,18 @@
 // api/claude.js — Claude → OpenAI → Mistral (fallbacks automatiques)
+import { applyPrivateCors, requireUser } from './_auth.js';
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  applyPrivateCors(req, res);
   if(req.method === 'OPTIONS') { res.status(200).end(); return; }
   if(req.method !== 'POST')    { res.status(405).json({error:'Method not allowed'}); return; }
+  if(!await requireUser(req, res)) return;
 
   const body = req.body || {};
-  if(!body.max_tokens) body.max_tokens = 1024;
+  body.max_tokens = Math.min(Math.max(Number(body.max_tokens) || 1024, 64), 2500);
+  if(JSON.stringify(body).length > 60000) return res.status(413).json({error:'Payload too large'});
 
-  const CLAUDE_KEY  = process.env.CLAUDE_API;
-  const OPENAI_KEY  = process.env.OPENAI_API;
-  const MISTRAL_KEY = process.env.MISTRAL_API;
+  const CLAUDE_KEY  = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API;
+  const OPENAI_KEY  = process.env.OPENAI_API_KEY || process.env.OPENAI_API;
+  const MISTRAL_KEY = process.env.MISTRAL_API_KEY || process.env.MISTRAL_API;
 
   console.log('Keys — Claude:', !!CLAUDE_KEY, '| OpenAI:', !!OPENAI_KEY, '| Mistral:', !!MISTRAL_KEY);
 
