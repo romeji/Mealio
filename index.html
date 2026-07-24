@@ -1135,7 +1135,7 @@ body.offline-mode .offline-banner{display:block;}
     <div class="aw">
       <div class="a-logo">
         <div class="a-logo-ic"><svg width="22" height="22" viewBox="0 0 44 44" fill="none"><path d="M7 11h5l6 17h11l4-11H13" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="33" r="2.5" fill="#fff"/><circle cx="28" cy="33" r="2.5" fill="#fff"/></svg></div>
-        <div class="a-logo-tx">Smart<span>Card</span></div>
+        <div class="a-logo-tx">Meal<span>io</span></div>
         <span style="font-size:.6rem;color:var(--tx3);margin-left:auto;font-weight:700;">v3.0</span>
       </div>
       <h1 class="a-h">Bonjour 👋</h1>
@@ -2612,6 +2612,15 @@ async function initFirebase() {
       firebaseInitialized = true;
     }
     try { await auth.setPersistence(firebase.auth.Auth.Persistence?.LOCAL || 'local'); } catch(pe) { /* persistence may not be available */ }
+    // Termine proprement un éventuel repli signInWithRedirect (mobile/PWA).
+    await auth.getRedirectResult().catch(e => {
+      if(e?.code && e.code !== 'auth/no-auth-event') {
+        console.error('Google redirect:', e.code, e.message);
+        showAuthError(e.code === 'auth/unauthorized-domain'
+          ? 'Ajoutez mealio-fr.vercel.app aux domaines autorisés Firebase.'
+          : 'La connexion Google a échoué. Réessayez.');
+      }
+    });
     dbg('Firebase OK');
     // Sync shared recipes in background (non-blocking)
     setTimeout(() => { if(typeof syncGlobalRecipesFromFirestore === 'function') syncGlobalRecipesFromFirestore().catch(()=>{}); }, 2000);
@@ -2623,8 +2632,34 @@ async function initFirebase() {
 }
 
 async function loginGoogle() {
-  // Use redirect flow for all platforms (popup unreliable on webapp/mobile)
-  window.location.href = window.location.origin + '/api/auth/google';
+  if(!auth || !window.firebase?.auth) {
+    showAuthError('Connexion Google momentanément indisponible.');
+    return;
+  }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({prompt: 'select_account'});
+  try {
+    // Le popup conserve la session sur le domaine Mealio et évite l'ancien
+    // client OAuth personnalisé qui pouvait être bloqué par Google.
+    await auth.signInWithPopup(provider);
+  } catch(e) {
+    if(['auth/popup-blocked','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].includes(e.code)) {
+      try {
+        await auth.signInWithRedirect(provider);
+        return;
+      } catch(redirectError) {
+        e = redirectError;
+      }
+    }
+    const messages = {
+      'auth/popup-closed-by-user': 'Connexion annulée.',
+      'auth/unauthorized-domain': 'Ce domaine doit être ajouté aux domaines autorisés dans Firebase.',
+      'auth/account-exists-with-different-credential': 'Un compte existe déjà avec cette adresse email.',
+      'auth/operation-not-allowed': 'Activez Google dans Firebase Authentication.'
+    };
+    showAuthError(messages[e.code] || 'Connexion Google impossible. Réessayez.');
+    console.error('Google sign-in:', e.code, e.message);
+  }
 }
 
 async function loginEmail() {
@@ -2798,17 +2833,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           currentUser = user;
           await startApp(user);
         } else {
-          try {
-            const r = await auth.getRedirectResult();
-            if(r && r.user) {
-              currentUser = r.user;
-              await startApp(r.user);
-            } else {
-              document.getElementById('authWrap').style.display = 'block';
-            }
-          } catch(e) {
-            document.getElementById('authWrap').style.display = 'block';
-          }
+          document.getElementById('authWrap').style.display = 'block';
         }
       });
     }, 400);
