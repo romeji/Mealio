@@ -2671,6 +2671,7 @@ async function loginGoogle() {
       'auth/unauthorized-domain': 'Ce domaine doit être ajouté aux domaines autorisés dans Firebase.',
       'auth/account-exists-with-different-credential': 'Un compte existe déjà avec cette adresse email.',
       'auth/operation-not-allowed': 'Activez Google dans Firebase Authentication.',
+      'auth/invalid-credential': 'La configuration Google de Mealio doit être actualisée dans Firebase (secret OAuth invalide).',
       'auth/web-storage-unsupported': 'Ce navigateur bloque le stockage nécessaire à Google. Ouvrez Mealio dans Chrome, Safari ou installez la PWA.'
     };
     const storageBlocked = !canUseSessionStorage || /sessionStorage|initial state|storage/i.test(e.message || '');
