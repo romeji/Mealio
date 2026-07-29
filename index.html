@@ -2538,222 +2538,9 @@ html[data-theme=light] #app .vwrap{
 @supports not (height:100dvh){
   #app.on{height:100vh;min-height:100vh;}
 }
-
-/* MENU V3 — composants éditoriaux sobres, cartes généreuses et contrôles tactiles */
-#menuVb{
-  --menu-coral:#ff4938;
-  --menu-cream:#fff7ea;
-  --menu-paper:#fff;
-  --menu-ink:#171717;
-  --menu-muted:#746d64;
-  --menu-line:rgba(23,23,23,.09);
-  padding-top:20px!important;
-}
-.menu-hero-v2{
-  position:relative;
-  overflow:hidden;
-  margin:0 0 22px;
-  padding:24px;
-  border-radius:28px;
-  background:var(--menu-ink);
-  color:#fff;
-}
-.menu-hero-v2::after{
-  content:"";
-  position:absolute;
-  right:-36px;
-  top:-48px;
-  width:170px;
-  height:170px;
-  border-radius:50%;
-  background:var(--menu-coral);
-}
-.menu-hero-v2__eyebrow,
-.menu-panel-intro>span,
-.menu-section-heading span{
-  display:block;
-  font-size:.66rem;
-  line-height:1;
-  font-weight:900;
-  letter-spacing:1.45px;
-  text-transform:uppercase;
-}
-.menu-hero-v2__eyebrow{position:relative;z-index:1;margin-bottom:13px;color:#ff8c80;}
-.menu-hero-v2__row{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:18px;}
-.menu-hero-v2 h1{margin:0;font-size:clamp(2rem,9vw,3.1rem);line-height:.95;letter-spacing:-2.3px;}
-.menu-hero-v2 p{max-width:320px;margin:11px 0 0;color:rgba(255,255,255,.72);font-size:.82rem;line-height:1.4;}
-.menu-hero-v2__summary{
-  position:relative;
-  z-index:2;
-  display:grid;
-  flex:0 0 102px;
-  justify-items:start;
-  gap:2px;
-  min-height:96px;
-  padding:13px;
-  border:0;
-  border-radius:20px;
-  background:#fff;
-  color:var(--menu-ink);
-  text-align:left;
-  cursor:pointer;
-}
-.menu-hero-v2__summary svg{width:20px;height:20px;margin-bottom:5px;color:var(--menu-coral);stroke-width:2.3;}
-.menu-hero-v2__summary span{font-size:1rem;font-weight:900;}
-.menu-hero-v2__summary strong{font-size:.6rem;line-height:1.2;color:var(--menu-muted);}
-.menu-hero-v2__quick{position:relative;z-index:1;display:flex;gap:8px;flex-wrap:wrap;margin-top:22px;}
-.menu-hero-v2__quick span{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.1);font-size:.64rem;font-weight:800;}
-.menu-section-heading{display:flex;align-items:end;justify-content:space-between;margin:0 2px 12px;}
-.menu-section-heading span{margin-bottom:5px;color:var(--menu-coral);}
-.menu-section-heading strong{font-size:1.22rem;letter-spacing:-.45px;}
-.menu-tabs-v2{
-  position:sticky;
-  top:0;
-  z-index:45;
-  display:grid!important;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:5px!important;
-  width:100%;
-  margin:0 0 20px!important;
-  padding:5px!important;
-  overflow:visible!important;
-  border:1px solid var(--menu-line)!important;
-  border-radius:22px!important;
-  background:color-mix(in srgb,var(--menu-cream) 90%,transparent)!important;
-  box-shadow:0 8px 24px rgba(23,23,23,.07)!important;
-  backdrop-filter:blur(16px);
-}
-.menu-tabs-v2 .menu-tab{
-  display:flex!important;
-  min-width:0!important;
-  min-height:58px;
-  padding:8px 3px!important;
-  border:0!important;
-  border-radius:17px!important;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:5px;
-  background:transparent!important;
-  color:var(--menu-muted)!important;
-  font-size:.61rem!important;
-  font-weight:850!important;
-}
-.menu-tabs-v2 .menu-tab svg{width:18px;height:18px;stroke-width:2.1;}
-.menu-tabs-v2 .menu-tab.on{
-  background:var(--menu-ink)!important;
-  color:#fff!important;
-  box-shadow:none!important;
-}
-.menu-panel-v2{animation:menuPanelIn .22s ease both;}
-@keyframes menuPanelIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
-.menu-panel-intro{margin:4px 2px 20px;}
-.menu-panel-intro>span{margin-bottom:8px;color:var(--menu-coral);}
-.menu-panel-intro h2{margin:0;max-width:480px;color:var(--menu-ink);font-size:clamp(1.55rem,7vw,2.25rem);line-height:1.02;letter-spacing:-1.2px;}
-.menu-panel-intro p{margin:9px 0 0;color:var(--menu-muted);font-size:.79rem;line-height:1.45;}
-#menuPanelWeek .menu-profile-strip{
-  padding:17px 18px!important;
-  border:0!important;
-  border-radius:20px!important;
-  background:#ffe5df!important;
-  box-shadow:none!important;
-}
-.menu-planner-card{
-  padding:20px!important;
-  border:1px solid var(--menu-line)!important;
-  border-radius:24px!important;
-  background:var(--menu-paper)!important;
-  box-shadow:none!important;
-}
-#menuVb .diet-chips{gap:7px;}
-#menuVb .diet-chip{
-  min-height:38px;
-  padding:9px 13px!important;
-  border:1px solid var(--menu-line)!important;
-  border-radius:999px!important;
-  background:var(--menu-paper)!important;
-  color:var(--menu-ink)!important;
-  box-shadow:none!important;
-}
-#menuVb .diet-chip.on{
-  border-color:var(--menu-ink)!important;
-  background:var(--menu-ink)!important;
-  color:#fff!important;
-}
-#menuVb .btn.acc{
-  min-height:48px;
-  border-radius:16px!important;
-  background:var(--menu-coral)!important;
-  box-shadow:none!important;
-}
-#menuVb .btn.ghost{border:1px solid var(--menu-line);background:#fff!important;box-shadow:none!important;}
-#menuVb .inp,
-#menuVb .spoon-search-inp{
-  min-height:50px;
-  border:1px solid var(--menu-line)!important;
-  border-radius:16px!important;
-  background:#fff!important;
-  box-shadow:none!important;
-}
-#menuPanelRecipes #myRecipesTabs{
-  display:inline-flex;
-  padding:4px;
-  border-radius:999px;
-  background:#efe8dc;
-}
-#menuPanelSearch #explinfo{padding:13px 15px!important;border-radius:16px!important;background:#ffe5df!important;}
-#menuPanelSearch .spoon-search-bar{gap:8px;margin-bottom:12px;}
-#menuPanelSearch #explorerTags{padding-bottom:4px;}
-#menuPanelSearch #explorerTags .spoon-recipe-tag{
-  flex:0 0 auto;
-  min-height:38px;
-  padding:9px 13px;
-  border:1px solid var(--menu-line);
-  border-radius:999px;
-  background:#fff;
-  color:var(--menu-ink);
-  box-shadow:none;
-}
-#menuPanelNutri #nutriRoot>div,
-#menuPanelWeek #dayDetail>div{border-radius:24px!important;box-shadow:none!important;}
-[data-theme=dark] #menuVb,
-[data-theme=anthracite] #menuVb{
-  --menu-cream:var(--bg);
-  --menu-paper:var(--bg2);
-  --menu-ink:var(--tx);
-  --menu-muted:var(--tx2);
-  --menu-line:rgba(255,255,255,.1);
-}
-[data-theme=dark] .menu-hero-v2,
-[data-theme=anthracite] .menu-hero-v2{background:#111;}
-[data-theme=dark] #menuVb .inp,
-[data-theme=dark] #menuVb .spoon-search-inp,
-[data-theme=dark] #menuVb .diet-chip,
-[data-theme=anthracite] #menuVb .inp,
-[data-theme=anthracite] #menuVb .spoon-search-inp,
-[data-theme=anthracite] #menuVb .diet-chip{background:var(--bg2)!important;}
-@media(max-width:520px){
-  #menuVb{padding:16px 14px calc(112px + env(safe-area-inset-bottom))!important;}
-  .menu-hero-v2{padding:21px 18px;border-radius:24px;}
-  .menu-hero-v2__row{gap:12px;}
-  .menu-hero-v2__summary{flex-basis:92px;min-height:91px;padding:12px;}
-  .menu-hero-v2__quick span:last-child{display:none;}
-  .menu-tabs-v2{border-radius:20px!important;}
-  .menu-tabs-v2 .menu-tab{min-height:55px;font-size:.57rem!important;}
-  .menu-planner-card{padding:17px!important;}
-  #menuVb .menu-opt-row{align-items:stretch;flex-direction:column;gap:6px;}
-  #menuVb .menu-opt-label{width:auto!important;}
-  #menuPanelSearch .spoon-search-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;}
-}
-@media(min-width:768px){
-  #menuVb{max-width:920px!important;}
-  .menu-panel-v2{max-width:860px;margin-inline:auto;}
-  .menu-hero-v2,.menu-section-heading,.menu-tabs-v2{max-width:860px;margin-left:auto!important;margin-right:auto!important;}
-}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
-<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="mealio-quality.js"></script>
 <script src="recipe-store.js"></script>
 <script src="api-client.js"></script>
@@ -3359,46 +3146,28 @@ html[data-theme=light] #app .vwrap{
     <div class="view" id="vMenu">
     <div class="vb" id="menuVb">
 
-      <!-- MENU HEADER -->
-      <section class="menu-hero-v2">
-        <div class="menu-hero-v2__eyebrow">MA SEMAINE</div>
-        <div class="menu-hero-v2__row">
-          <div>
-            <h1>Mon Menu</h1>
-            <p>Planifiez, cuisinez et équilibrez votre semaine.</p>
-          </div>
-          <button type="button" class="menu-hero-v2__summary" onclick="openWeekSummaryModal()" aria-label="Voir le bilan de la semaine">
-            <i data-lucide="chart-no-axes-column-increasing"></i>
-            <span>7 jours</span>
-            <strong>Voir le bilan</strong>
-          </button>
-        </div>
-        <div class="menu-hero-v2__quick">
-          <span><b>🍽️</b> Repas organisés</span>
-          <span><b>✨</b> Suggestions personnalisées</span>
-        </div>
-      </section>
-
-      <div class="menu-section-heading">
+      <!-- HEADER -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <div>
-          <span>Votre espace cuisine</span>
-          <strong id="menuSectionTitle">La semaine</strong>
+          <div class="lg-title" style="margin-bottom:2px;">Mon Menu 📅</div>
+          <div class="lg-sub">Mealio · Recettes françaises · Planification de la semaine</div>
         </div>
+        
       </div>
 
       <!-- AI INSIGHT STRIP (live analysis) -->
 
 
       <!-- SOUS-ONGLETS -->
-      <nav class="menu-tabs menu-tabs-v2" id="menuTabBar" aria-label="Sections du menu">
-        <button type="button" class="menu-tab on" id="mtab-week" onclick="switchMenuTab('week')"><i data-lucide="calendar-days"></i><span>Semaine</span></button>
-        <button type="button" class="menu-tab" id="mtab-recipes" onclick="switchMenuTab('recipes')"><i data-lucide="heart"></i><span>Recettes</span></button>
-        <button type="button" class="menu-tab" id="mtab-search" onclick="switchMenuTab('search')"><i data-lucide="search"></i><span>Explorer</span></button>
-        <button type="button" class="menu-tab" id="mtab-nutri" onclick="switchMenuTab('nutri')"><i data-lucide="chart-pie"></i><span>Nutrition</span></button>
+      <div class="menu-tabs" id="menuTabBar" style="margin-bottom:14px;">
+        <div class="menu-tab on" id="mtab-week" onclick="switchMenuTab('week')">📅 Semaine</div>
+        <div class="menu-tab" id="mtab-recipes" onclick="switchMenuTab('recipes')">📖 Mes Recettes</div>
+        <div class="menu-tab" id="mtab-search" onclick="switchMenuTab('search')">🔍 Explorer</div>
+        <div class="menu-tab" id="mtab-nutri" onclick="switchMenuTab('nutri')">📊 Nutrition</div>
       </div>
 
       <!-- ═══ TAB: SEMAINE ═══ -->
-      <div id="menuPanelWeek" class="menu-panel-v2">
+      <div id="menuPanelWeek">
 
         <!-- Profil strip -->
         <div class="menu-profile-strip" id="menuProfileStrip" onclick="openMenuProfile()">
@@ -3416,7 +3185,7 @@ html[data-theme=light] #app .vwrap{
         </div>
 
         <!-- IA Generation -->
-        <div class="card mb14 menu-planner-card">
+        <div class="card mb14">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <div style="font-weight:900;font-size:.92rem;">📅 Planifier ma semaine</div>
             <button class="btn ghost sm" onclick="toggleMenuOpts()" style="font-size:.72rem;color:var(--tx2);">⚙️ Options</button>
@@ -3506,12 +3275,7 @@ html[data-theme=light] #app .vwrap{
       </div>
 
       <!-- ═══ TAB: MES RECETTES ═══ -->
-      <div id="menuPanelRecipes" class="menu-panel-v2" style="display:none;">
-        <div class="menu-panel-intro">
-          <span>Votre carnet</span>
-          <h2>Les recettes que vous aimez</h2>
-          <p>Retrouvez vos favoris et vos créations au même endroit.</p>
-        </div>
+      <div id="menuPanelRecipes" style="display:none;">
         <div class="diet-chips" id="myRecipesTabs" style="margin-bottom:14px;">
           <div class="diet-chip on" data-v="favs" onclick="switchMyRecipesTab('favs')">⭐ Favoris</div>
           <div class="diet-chip" data-v="all" onclick="switchMyRecipesTab('all')">📚 Toutes les recettes</div>
@@ -3533,12 +3297,7 @@ html[data-theme=light] #app .vwrap{
       </div>
 
       <!-- ═══ TAB: EXPLORER (Jow.fr) ═══ -->
-      <div id="menuPanelSearch" class="menu-panel-v2" style="display:none;">
-        <div class="menu-panel-intro">
-          <span>Trouver une idée</span>
-          <h2>Qu’est-ce qu’on cuisine ?</h2>
-          <p>Recherchez un plat ou laissez-vous guider par une envie.</p>
-        </div>
+      <div id="menuPanelSearch" style="display:none;">
         <!-- Explorer Jow info banner -->
         <div id="explinfo" style="font-size:.7rem;color:var(--tx2);margin-bottom:10px;padding:8px 12px;background:rgba(255,107,107,.06);border-radius:var(--rs);display:flex;align-items:center;gap:6px;">
           🇫🇷 <strong>Jow.fr</strong> — Des milliers de recettes françaises avec portions, nutrition et scores
@@ -3579,12 +3338,7 @@ html[data-theme=light] #app .vwrap{
       </div>
 
       <!-- ═══ TAB: NUTRITION ═══ -->
-      <div id="menuPanelNutri" class="menu-panel-v2" style="display:none;">
-        <div class="menu-panel-intro">
-          <span>Votre équilibre</span>
-          <h2>La semaine en un coup d’œil</h2>
-          <p>Des repères simples pour varier les repas sans compter chaque détail.</p>
-        </div>
+      <div id="menuPanelNutri" style="display:none;">
         <div id="nutriRoot"></div>
       </div>
 
@@ -6029,7 +5783,6 @@ function renderFavoritesPanel() {
 
 
 function initMenuModule() {
-  refreshMenuIcons();
   updateMenuProfileCard();
   renderWeek();
   renderSeason();
@@ -6059,14 +5812,6 @@ function initMenuModule() {
 // ── Sous-onglets ────────────────────────────────────────────
 function switchMenuTab(tab) {
   _menuTab = tab;
-  const sectionTitles = {
-    week:'La semaine',
-    recipes:'Mes recettes',
-    search:'Explorer',
-    nutri:'Nutrition'
-  };
-  const sectionTitle = document.getElementById('menuSectionTitle');
-  if(sectionTitle) sectionTitle.textContent = sectionTitles[tab] || 'Mon Menu';
   ['week','recipes','search','nutri'].forEach(t => {
     const btn = document.getElementById('mtab-'+t);
     const panelId = 'menuPanel' + t.charAt(0).toUpperCase() + t.slice(1);
@@ -6081,19 +5826,6 @@ function switchMenuTab(tab) {
     const inp = document.getElementById('spoonSearchInp');
     if(inp) setTimeout(()=>inp.focus(), 100);
   }
-  refreshMenuIcons();
-}
-
-function refreshMenuIcons() {
-  requestAnimationFrame(() => {
-    try {
-      if(window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons({
-          attrs:{'aria-hidden':'true','stroke-width':2}
-        });
-      }
-    } catch(_) {}
-  });
 }
 
 // ── Sous-onglets de "Mes Recettes": Favoris / Toutes les recettes ──
