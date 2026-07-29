@@ -2291,6 +2291,180 @@ html[data-theme=light] #vMenu .spoon-recipe-tag{
     top:-41px!important;
   }
 }
+
+/* ══ CARTE RECETTE UNIQUE — dérivée de « Recettes du moment » ══ */
+html[data-theme=light]{
+  --mealio-recipe-card:#fff;
+  --mealio-recipe-pill:#fff3e3;
+  --mealio-recipe-ink:#171717;
+  --mealio-recipe-shadow:0 8px 0 rgba(30,25,20,.07);
+  --mealio-plate-shadow:8px 9px 0 rgba(34,34,34,.32);
+}
+
+html[data-theme=light] .rc,
+html[data-theme=light] .recipe-unified-card,
+html[data-theme=light] #vMenu .spoon-recipe{
+  position:relative!important;
+  width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:254px!important;
+  max-height:none!important;
+  padding:68px 10px 52px!important;
+  overflow:visible!important;
+  align-self:start!important;
+  text-align:center!important;
+  color:var(--mealio-recipe-ink)!important;
+  background:var(--mealio-recipe-card)!important;
+  border:0!important;
+  border-radius:22px!important;
+  box-shadow:var(--mealio-recipe-shadow)!important;
+}
+
+html[data-theme=light] .rc-img-wrap,
+html[data-theme=light] .recipe-unified-card>img,
+html[data-theme=light] #vMenu .spoon-recipe>.spoon-recipe-img{
+  position:absolute!important;
+  z-index:2!important;
+  top:-46px!important;
+  left:50%!important;
+  width:108px!important;
+  height:108px!important;
+  transform:translateX(-50%)!important;
+  margin:0!important;
+  overflow:visible!important;
+  border-radius:50%!important;
+}
+html[data-theme=light] .rc-img-wrap img,
+html[data-theme=light] .recipe-unified-card>img,
+html[data-theme=light] #vMenu .spoon-recipe>.spoon-recipe-img{
+  width:108px!important;
+  height:108px!important;
+  aspect-ratio:1!important;
+  object-fit:cover!important;
+  border-radius:50%!important;
+  box-shadow:var(--mealio-plate-shadow)!important;
+}
+
+html[data-theme=light] .rc-nm,
+html[data-theme=light] .recipe-unified-card>div>div:first-child,
+html[data-theme=light] #vMenu .spoon-recipe-name{
+  min-height:44px!important;
+  margin:0 0 7px!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  font-size:.79rem!important;
+  font-weight:900!important;
+  line-height:1.22!important;
+  color:var(--mealio-recipe-ink)!important;
+  text-align:center!important;
+}
+
+html[data-theme=light] .rc-mt,
+html[data-theme=light] .recipe-unified-card>div>div:nth-child(2),
+html[data-theme=light] #vMenu .spoon-recipe-meta{
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  gap:4px!important;
+}
+html[data-theme=light] .rc-mt>span,
+html[data-theme=light] .recipe-unified-card [style*="font-size:.58rem"],
+html[data-theme=light] #vMenu .spoon-recipe-tag{
+  display:inline-flex!important;
+  align-items:center!important;
+  min-height:25px;
+  padding:4px 7px!important;
+  color:var(--mealio-recipe-ink)!important;
+  background:var(--mealio-recipe-pill)!important;
+  border:0!important;
+  border-radius:9px!important;
+  font-size:.52rem!important;
+  font-weight:800!important;
+  line-height:1!important;
+}
+
+html[data-theme=light] .rc .recipe-heart,
+html[data-theme=light] .recipe-unified-card>button,
+html[data-theme=light] #vMenu .spoon-recipe .spoon-add-btn{
+  position:absolute!important;
+  z-index:5!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:8px!important;
+  left:50%!important;
+  width:38px!important;
+  height:38px!important;
+  padding:0!important;
+  transform:translateX(-50%)!important;
+  display:grid!important;
+  place-items:center!important;
+  color:var(--mealio-recipe-ink)!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:50%!important;
+  box-shadow:none!important;
+}
+
+html[data-theme=light] .rc-grid,
+html[data-theme=light] #favsGrid .spoon-grid,
+html[data-theme=light] #recipesGridAll .spoon-grid,
+html[data-theme=light] #jowResults .spoon-grid,
+html[data-theme=light] #vMenu .spoon-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  column-gap:12px!important;
+  row-gap:72px!important;
+  align-items:start!important;
+  width:100%!important;
+  padding:62px 0 20px!important;
+  overflow:visible!important;
+}
+
+/* La carte d'accueil garde sa taille de carrousel, mais partage les mêmes finitions. */
+html[data-theme=light] .daily-card{
+  background:var(--mealio-recipe-card)!important;
+  color:var(--mealio-recipe-ink)!important;
+  border-radius:22px!important;
+  box-shadow:var(--mealio-recipe-shadow)!important;
+}
+html[data-theme=light] .daily-card>img{box-shadow:var(--mealio-plate-shadow)!important;}
+html[data-theme=light] .daily-reason,
+html[data-theme=light] .daily-pill,
+html[data-theme=light] .daily-meta>span{
+  background:var(--mealio-recipe-pill)!important;
+  color:var(--mealio-recipe-ink)!important;
+}
+
+@media(max-width:350px){
+  html[data-theme=light] .rc,
+  html[data-theme=light] .recipe-unified-card,
+  html[data-theme=light] #vMenu .spoon-recipe{
+    min-height:238px!important;
+    padding:59px 6px 48px!important;
+    border-radius:18px!important;
+  }
+  html[data-theme=light] .rc-img-wrap,
+  html[data-theme=light] .rc-img-wrap img,
+  html[data-theme=light] .recipe-unified-card>img,
+  html[data-theme=light] #vMenu .spoon-recipe>.spoon-recipe-img{
+    top:-40px!important;
+    width:94px!important;
+    height:94px!important;
+  }
+  html[data-theme=light] .rc-grid,
+  html[data-theme=light] #favsGrid .spoon-grid,
+  html[data-theme=light] #recipesGridAll .spoon-grid,
+  html[data-theme=light] #jowResults .spoon-grid,
+  html[data-theme=light] #vMenu .spoon-grid{
+    column-gap:8px!important;
+    row-gap:64px!important;
+    padding-top:54px!important;
+  }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
