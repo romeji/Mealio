@@ -4763,7 +4763,7 @@ function switchTab(tab) {
       // (bannière "Gérez vos stocks", etc.) reste bien visible.
       const view = document.getElementById('vFrigo');
       const vb = view?.querySelector('.vb');
-      forceViewTop(vb);
+      if(vb?._mealioTopGuardCleanup) forceViewTop(vb);
     }).catch(() => {});
   }
   // Remove any premium lock overlay if present
@@ -4795,6 +4795,46 @@ function forceViewTop(vb, holdMs = 1400) {
   window.scrollTo(0, 0);
 }
 
+function armViewTopGuard(vb) {
+  if(!vb) return;
+  if(typeof vb._mealioTopGuardCleanup === 'function') vb._mealioTopGuardCleanup();
+
+  let released = false;
+  const keepAtTop = () => {
+    if(released) return;
+    vb.scrollTop = 0;
+    vb.scrollLeft = 0;
+  };
+  const release = () => {
+    if(released) return;
+    released = true;
+    cleanup();
+  };
+  const cleanup = () => {
+    clearInterval(interval);
+    clearTimeout(timeout);
+    vb.removeEventListener('touchstart', release);
+    vb.removeEventListener('pointerdown', release);
+    vb.removeEventListener('wheel', release);
+    vb.removeEventListener('keydown', release);
+    vb.removeEventListener('scroll', keepAtTop);
+    vb._mealioTopGuardCleanup = null;
+  };
+
+  // Les événements d'intention arrivent avant le défilement réel : l'utilisateur
+  // garde donc une navigation normale dès son premier geste.
+  vb.addEventListener('touchstart', release, {passive:true, once:true});
+  vb.addEventListener('pointerdown', release, {passive:true, once:true});
+  vb.addEventListener('wheel', release, {passive:true, once:true});
+  vb.addEventListener('keydown', release, {once:true});
+  vb.addEventListener('scroll', keepAtTop, {passive:true});
+
+  const interval = setInterval(keepAtTop, 80);
+  const timeout = setTimeout(cleanup, 10000);
+  vb._mealioTopGuardCleanup = cleanup;
+  keepAtTop();
+}
+
 function _doSwitchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
@@ -4805,6 +4845,7 @@ function _doSwitchTab(tab) {
   if(view) {
     view.classList.add('on');
     const vb = view.querySelector('.vb');
+    if(tab === 'frigo' || tab === 'menu') armViewTopGuard(vb);
     const resetScroll = () => {
       forceViewTop(vb);
     };
@@ -5681,7 +5722,7 @@ function initMenuModule() {
         clearInterval(checkLoaded);
         const view = document.getElementById('vMenu');
         const vb = view?.querySelector('.vb');
-        forceViewTop(vb);
+        if(vb?._mealioTopGuardCleanup) forceViewTop(vb);
       }
     }, 200);
     // Ne pas laisser tourner indéfiniment si le chargement échoue
