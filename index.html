@@ -2482,6 +2482,62 @@ html[data-theme=light] .daily-meta>span{
     padding-top:54px!important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   APP SHELL V2
+   Une seule structure pour toutes les pages : l'en-tête participe au flux,
+   la zone centrale prend l'espace restant et chaque .vb est le seul scroller.
+   Aucun calcul du `top` ne peut donc masquer le début d'une vue.
+   ═══════════════════════════════════════════════════════════════════════════ */
+#app.on{
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  width:100%;
+  height:100dvh;
+  min-height:100dvh;
+  overflow:hidden;
+  isolation:isolate;
+}
+#app .topbar,
+html[data-theme=light] #app .topbar{
+  position:relative;
+  inset:auto;
+  grid-row:1;
+  width:100%;
+  height:auto;
+  min-height:calc(74px + env(safe-area-inset-top));
+  padding:calc(14px + env(safe-area-inset-top)) 18px 14px;
+  flex-shrink:0;
+}
+#app .vwrap,
+html[data-theme=light] #app .vwrap{
+  position:relative;
+  inset:auto;
+  top:auto;
+  bottom:auto;
+  grid-row:2;
+  width:100%;
+  min-width:0;
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+#app .view{
+  position:absolute;
+  inset:0;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+}
+#app .view>.vb{
+  width:100%;
+  height:100%;
+  min-height:0;
+  overscroll-behavior-y:contain;
+}
+@supports not (height:100dvh){
+  #app.on{height:100vh;min-height:100vh;}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
