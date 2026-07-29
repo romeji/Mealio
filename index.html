@@ -1246,6 +1246,237 @@ html,body,#app{overscroll-behavior:none;touch-action:pan-x pan-y;}
 @media(max-width:370px){
   .recipe-editorial #ingrList{grid-template-columns:1fr 1fr;margin-left:10px!important;margin-right:10px!important;}
 }
+
+/* ══ MEALIO KITCHEN — warm editorial visual language ══ */
+html[data-theme=light]{
+  --bg:#fff7ea;
+  --bg2:#f4eadb;
+  --bg3:#ffffff;
+  --tx:#171717;
+  --tx2:#5f5951;
+  --tx3:#a79e91;
+  --ac:#ff4938;
+  --ac2:#ff6a45;
+  --tl:#2d9f95;
+  --gn:#16894d;
+  --or:#e7662d;
+  --rd:#d93b32;
+  --bl:#64a9e9;
+  --r:26px;
+  --rs:18px;
+  --rx:13px;
+  --so:0 10px 0 rgba(30,25,20,.08);
+  --si:inset 0 0 0 1px rgba(23,23,23,.08);
+  --ss:inset 0 0 0 1px rgba(23,23,23,.08);
+  --sf:0 16px 0 rgba(30,25,20,.1);
+  --sp:inset 0 2px 4px rgba(30,25,20,.12);
+  --grad:linear-gradient(135deg,#ff4938,#ff6946);
+  --grad2:linear-gradient(135deg,#ff4938,#ff8a62);
+  --grad3:linear-gradient(135deg,#59c8d8,#86d8e6);
+}
+html[data-theme=light] body{background:#fff7ea;color:#171717;}
+html[data-theme=light] .topbar{
+  height:calc(74px + env(safe-area-inset-top));
+  padding:14px 18px;
+  padding-top:calc(14px + env(safe-area-inset-top));
+  background:rgba(255,247,234,.94);
+  border-bottom:0;
+  box-shadow:none;
+  backdrop-filter:blur(18px);
+}
+html[data-theme=light] .vwrap{top:calc(74px + env(safe-area-inset-top));}
+html[data-theme=light] .tb-logo{position:absolute;left:50%;transform:translateX(-50%);gap:7px;}
+html[data-theme=light] .tb-logo-ic{width:37px;height:37px;border-radius:11px;box-shadow:none;}
+html[data-theme=light] .tb-logo-tx{font-size:1.35rem;letter-spacing:-.6px;}
+html[data-theme=light] .tb-r{margin-left:auto;}
+html[data-theme=light] #themeToggleBtn{margin-right:auto;background:transparent;box-shadow:none;border:0;font-size:1rem!important;}
+html[data-theme=light] .av,html[data-theme=light] .notif-bell{box-shadow:none!important;border:0!important;}
+html[data-theme=light] .vb{padding:22px 18px calc(112px + env(safe-area-inset-bottom));}
+html[data-theme=light] .lg-title{font-size:2rem;line-height:1.05;letter-spacing:-1px;}
+html[data-theme=light] .lg-sub,html[data-theme=light] .lg-hello{color:#766f65;}
+
+html[data-theme=light] .card,
+html[data-theme=light] .ls-p,
+html[data-theme=light] .fi-card,
+html[data-theme=light] .nx-card,
+html[data-theme=light] .nx-stat,
+html[data-theme=light] .nx-macro{
+  background:#fff;
+  border:0;
+  box-shadow:0 8px 0 rgba(30,25,20,.07);
+}
+html[data-theme=light] .inp{
+  background:#fff;
+  border:1px solid rgba(23,23,23,.06);
+  box-shadow:none;
+  min-height:50px;
+  border-radius:999px;
+}
+html[data-theme=light] .btn{
+  background:#fff;
+  border:1px solid rgba(23,23,23,.055);
+  box-shadow:none;
+  border-radius:999px;
+  color:#171717;
+}
+html[data-theme=light] .btn.acc{background:#ff4938;color:#fff;border:0;box-shadow:none;}
+html[data-theme=light] .chip{background:#fff;border:0;box-shadow:none;color:#171717;}
+html[data-theme=light] .chip.on{background:#ff4938;color:#fff;box-shadow:none;}
+html[data-theme=light] .home-hub{background:#fff;border:0;box-shadow:0 9px 0 rgba(30,25,20,.07);}
+html[data-theme=light] .home-next{background:#ff4938;box-shadow:none;}
+
+html[data-theme=light] .tabbar{
+  bottom:calc(12px + env(safe-area-inset-bottom));
+  width:calc(100% - 24px);
+  padding:7px;
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(23,23,23,.06);
+  border-radius:27px;
+  box-shadow:0 10px 0 rgba(30,25,20,.09);
+  backdrop-filter:blur(18px);
+}
+html[data-theme=light] .tb-inner{padding:0;background:transparent;box-shadow:none;}
+html[data-theme=light] .tab{min-height:56px;border-radius:20px;color:#8f877c;}
+html[data-theme=light] .tab.on{background:#ff4938;color:#fff;box-shadow:none;}
+html[data-theme=light] .tab.on svg{color:#fff;}
+
+html[data-theme=light] .daily-recipes{
+  margin:34px -18px 22px!important;
+  padding:24px 18px 28px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:#fff7ea!important;
+  box-shadow:none!important;
+}
+html[data-theme=light] .daily-kicker{display:none;}
+html[data-theme=light] .daily-head{align-items:flex-start;margin-bottom:8px;}
+html[data-theme=light] .daily-head h2{font-size:1.75rem!important;line-height:1.1;letter-spacing:-.8px;max-width:300px;}
+html[data-theme=light] .daily-head .btn{width:44px;height:44px;padding:0;background:#fff;border-radius:50%;}
+html[data-theme=light] .daily-grid{
+  display:flex!important;
+  gap:16px!important;
+  padding:92px 3px 12px!important;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+}
+html[data-theme=light] .daily-grid::-webkit-scrollbar{display:none;}
+html[data-theme=light] .daily-card{
+  position:relative;
+  flex:0 0 245px;
+  min-width:245px;
+  min-height:325px;
+  padding:100px 18px 18px!important;
+  margin:0;
+  overflow:visible!important;
+  scroll-snap-align:center;
+  text-align:center;
+  background:#fff!important;
+  border:0!important;
+  border-radius:28px!important;
+  box-shadow:0 10px 0 rgba(30,25,20,.08)!important;
+}
+html[data-theme=light] .daily-card>img{
+  position:absolute;
+  z-index:2;
+  top:-82px;
+  left:50%;
+  width:174px!important;
+  height:174px!important;
+  transform:translateX(-50%);
+  aspect-ratio:1!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  box-shadow:13px 14px 0 rgba(34,34,34,.42);
+}
+html[data-theme=light] .daily-body{padding:10px 0 0!important;}
+html[data-theme=light] .daily-title{font-size:1.08rem!important;min-height:58px;display:flex;align-items:center;justify-content:center;}
+html[data-theme=light] .daily-reason{display:inline-flex;margin-top:7px;padding:6px 9px;border-radius:11px;background:#fff7ea;color:#171717!important;}
+html[data-theme=light] .daily-meta{justify-content:center;margin-top:7px;}
+html[data-theme=light] .daily-pill,html[data-theme=light] .daily-meta>span{background:#fff3e3!important;color:#171717!important;border-radius:11px;padding:6px 9px!important;}
+html[data-theme=light] .daily-card{padding-bottom:70px!important;}
+html[data-theme=light] .recipe-heart{
+  position:absolute;
+  z-index:5;
+  left:50%;
+  bottom:13px;
+  width:46px;
+  height:46px;
+  padding:0;
+  transform:translateX(-50%);
+  display:grid;
+  place-items:center;
+  border:0;
+  border-radius:50%;
+  background:transparent;
+  color:#171717;
+  font:400 2.15rem/1 system-ui,sans-serif;
+  cursor:pointer;
+  transition:transform .18s ease,color .18s ease,background .18s ease;
+}
+html[data-theme=light] .recipe-heart:hover,
+html[data-theme=light] .recipe-heart:focus-visible{
+  transform:translateX(-50%) scale(1.08);
+  background:#fff3e3;
+  outline:2px solid #171717;
+  outline-offset:2px;
+}
+html[data-theme=light] .recipe-heart.on{color:#ff4938;}
+
+html[data-theme=light] .rc-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important;padding-top:70px;}
+html[data-theme=light] .rc{
+  position:relative;
+  min-height:300px;
+  padding:88px 13px 68px!important;
+  overflow:visible!important;
+  text-align:center;
+  background:#fff!important;
+  border:0!important;
+  border-radius:26px!important;
+  box-shadow:0 9px 0 rgba(30,25,20,.08)!important;
+}
+html[data-theme=light] .rc-img-wrap{
+  position:absolute;
+  top:-62px;
+  left:50%;
+  width:132px!important;
+  height:132px!important;
+  transform:translateX(-50%);
+  overflow:visible!important;
+}
+html[data-theme=light] .rc-img-wrap img{
+  width:132px!important;
+  height:132px!important;
+  aspect-ratio:1!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  box-shadow:10px 11px 0 rgba(34,34,34,.4);
+}
+html[data-theme=light] .rc-bd{padding:0!important;}
+html[data-theme=light] .rc-nm{font-size:.92rem!important;line-height:1.25;min-height:47px;display:flex;align-items:center;justify-content:center;}
+html[data-theme=light] .rc-mt{justify-content:center!important;gap:5px!important;}
+html[data-theme=light] .rc-mt>span{padding:5px 7px!important;border-radius:10px!important;background:#fff3e3!important;color:#171717!important;font-size:.6rem!important;}
+html[data-theme=light] .rc-chips{display:none;}
+
+html[data-theme=light] .scan-c,
+html[data-theme=light] .profile-section,
+html[data-theme=light] .menu-gen-card,
+html[data-theme=light] .ai-menu-result{
+  background:#fff;
+  border:0;
+  box-shadow:0 8px 0 rgba(30,25,20,.07);
+}
+html[data-theme=light] .scan-c-ic{background:#fff1dc;}
+html[data-theme=light] .list-subtabs{background:#f4eadb;box-shadow:none;}
+html[data-theme=light] .list-subtab.on,html[data-theme=light] .menu-tab.on{background:#ff4938;color:#fff;box-shadow:none;}
+html[data-theme=light] .profile-modal,html[data-theme=light] .modal{background:#fff7ea;}
+html[data-theme=light] .recipe-editorial{--recipe-paper:#fff7ea;}
+
+@media(max-width:370px){
+  html[data-theme=light] .daily-card{flex-basis:225px;min-width:225px;}
+  html[data-theme=light] .rc{padding-left:9px!important;padding-right:9px!important;}
+  html[data-theme=light] .rc-img-wrap,html[data-theme=light] .rc-img-wrap img{width:116px!important;height:116px!important;}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
@@ -1526,7 +1757,7 @@ html,body,#app{overscroll-behavior:none;touch-action:pan-x pan-y;}
           <div class="daily-head">
             <div>
               <div class="daily-kicker">L’inspiration qui change chaque jour</div>
-              <h2 id="dailyRecipesTitle">À cuisiner aujourd’hui</h2>
+              <h2 id="dailyRecipesTitle">Découvrez les recettes du moment</h2>
               <div id="dailyRecipesSubtitle">Selon la saison, votre profil et votre frigo</div>
             </div>
             <button type="button" class="btn sm" onclick="refreshDailyRecipes()" aria-label="Afficher d’autres recettes">↻</button>
@@ -3976,6 +4207,9 @@ function _renderFridgeRecipes(grid, recipes) {
       const isCustom =
         r.source === 'custom';
 
+      const isBookmarked =
+        (state.recipeBookmarks || []).some(b => b.id === r.id);
+
       const chipsHtml =
         (r.ingredients || [])
         .slice(0, 6)
@@ -4067,6 +4301,8 @@ onclick="${onclickFn}"
 >
 
 ${img}
+
+<button type="button" class="recipe-heart ${isBookmarked?'on':''}" onclick="event.stopPropagation();toggleBookmark('${r.id}');this.classList.toggle('on')" aria-label="Ajouter aux favoris">♡</button>
 
 <div class="rc-bd">
 

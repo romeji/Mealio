@@ -93,6 +93,8 @@
       const popular = popularity > 5 ? '<span class="daily-pill">🔥 Appréciée</span>' : '';
       return `<article class="daily-card" tabindex="0" role="button" data-recipe-id="${esc(r.id)}"
         onclick="openDailyRecipe(this.dataset.recipeId)" onkeydown="if(event.key==='Enter')openDailyRecipe(this.dataset.recipeId)">
+        <button type="button" class="recipe-heart ${(state.recipeBookmarks||[]).some(b=>b.id===r.id)?'on':''}" data-recipe-id="${esc(r.id)}"
+          onclick="event.stopPropagation();toggleBookmark(this.dataset.recipeId);this.classList.toggle('on')" aria-label="Ajouter aux favoris">♡</button>
         ${r.photo ? `<img src="${esc(r.photo)}" alt="" loading="lazy">` : '<div class="daily-placeholder">🍲</div>'}
         <div class="daily-body">
           <div class="daily-title">${esc(r.name)}</div>
