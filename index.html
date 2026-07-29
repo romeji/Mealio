@@ -36,15 +36,15 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 <style>
 :root{
---bg:#f7f8fa;--bg2:#eceff3;--bg3:#ffffff;
---so:0 10px 30px rgba(47,35,45,.08);
---si:inset 0 0 0 1px rgba(47,35,45,.1);
---ss:inset 0 0 0 1px rgba(47,35,45,.08);
---sf:0 18px 48px rgba(47,35,45,.12);
---sp:inset 0 2px 5px rgba(47,35,45,.12);
---tx:#241824;--tx2:#685e68;--tx3:#9b919b;
+--bg:#fff6f9;--bg2:#ffe8f0;--bg3:#fff0f5;
+--so:6px 6px 16px rgba(255,107,107,.12),-5px -5px 14px rgba(255,255,255,.9);
+--si:inset 4px 4px 10px rgba(255,107,107,.1),inset -4px -4px 10px rgba(255,255,255,.85);
+--ss:inset 2px 2px 6px rgba(255,107,107,.08),inset -2px -2px 6px rgba(255,255,255,.75);
+--sf:10px 10px 24px rgba(255,107,107,.15),-8px -8px 20px rgba(255,255,255,.9);
+--sp:inset 3px 3px 8px rgba(255,107,107,.15),inset -3px -3px 8px rgba(255,255,255,.8);
+--tx:#2d1a2e;--tx2:#7a5c7e;--tx3:#c4a8c8;
 --ac:#ff6b6b;--ac2:#ff8e53;--tl:#00d2c6;--gn:#2ecc71;--or:#ff8e53;--rd:#e74c3c;--yl:#ffd32a;--pk:#ff6b9d;--lv:#9b59b6;--bl:#3498db;
---r:24px;--rs:16px;--rx:12px;--rp:999px;--f:'Nunito',sans-serif;
+--r:20px;--rs:14px;--rx:10px;--rp:999px;--f:'Nunito',sans-serif;
 --grad:linear-gradient(135deg,#ff6b6b,#ff8e53);
 --grad2:linear-gradient(135deg,#ff6b9d,#ff6b6b);
 --grad3:linear-gradient(135deg,#00d2c6,#3498db);
@@ -353,35 +353,6 @@ button,[role="button"]{touch-action:manipulation;}
 .home-next strong{display:block;font-size:.76rem;text-align:left;}
 .tab,.list-subtab{border:0;background:transparent;font-family:inherit;}
 @media(min-width:768px){.home-hub{padding:20px}.home-actions{gap:12px}.home-action{padding:14px 12px}.home-action-v{font-size:1.05rem}.home-next{padding:13px 16px}}
-
-/* ══ MEALIO 2026 — clearer, calmer visual system ══ */
-.topbar{background:color-mix(in srgb,var(--bg) 88%,transparent);border-bottom:1px solid rgba(45,26,46,.06);box-shadow:none;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);}
-.tb-logo-ic{box-shadow:0 7px 20px rgba(255,107,107,.22);}
-.tabbar{bottom:calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.9);border:1px solid rgba(45,26,46,.08);box-shadow:0 16px 42px rgba(45,26,46,.16);backdrop-filter:blur(22px);}
-.tb-inner{background:transparent;box-shadow:none;padding:2px;}
-.tab{min-width:0;padding:9px 2px;border-radius:17px;}
-.tab.on{background:var(--grad);box-shadow:0 7px 18px rgba(255,107,107,.28);}
-.tab-lb{font-size:.48rem;letter-spacing:.25px;}
-.card,.ls-p,.fi-card,.rc{background:var(--bg3);border:1px solid rgba(45,26,46,.055);box-shadow:var(--so);}
-.inp{background:var(--bg3);box-shadow:var(--si);}
-.btn{background:var(--bg3);box-shadow:0 5px 18px rgba(45,26,46,.08);}
-.chip{background:var(--bg3);box-shadow:0 4px 14px rgba(45,26,46,.07);border:1px solid rgba(45,26,46,.05);}
-.home-page-head{padding:8px 2px 4px;}
-.home-eyebrow{font-size:.72rem;font-weight:800;color:var(--tx2);margin-bottom:4px;}
-.home-page-title{font-size:2rem;font-weight:900;letter-spacing:-1.1px;line-height:1.05;}
-.home-page-sub{font-size:.82rem;color:var(--tx2);margin-top:7px;}
-.home-hub{margin-top:18px;background:linear-gradient(145deg,#342437 0%,#533144 58%,#ff735f 150%);border:0;box-shadow:0 18px 44px rgba(52,36,55,.22);padding:20px;color:#fff;}
-.home-hub::after{width:190px;height:190px;right:-70px;top:-90px;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,142,83,.24));}
-.home-hub-kicker{color:#ffb9a9;}
-.home-hub-title{font-size:1.25rem;}
-.home-hub-badge{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.15);}
-.home-action{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.1);color:#fff;box-shadow:none;padding:13px 10px;}
-.home-action-l{color:rgba(255,255,255,.68);}
-.home-next{background:#fff;color:#302033;box-shadow:none;margin-top:13px;padding:13px 15px;}
-.daily-recipes{margin-top:18px!important;background:var(--bg3)!important;border:1px solid rgba(45,26,46,.06)!important;box-shadow:var(--so)!important;}
-[data-theme=dark] .tabbar,[data-theme=anthracite] .tabbar{background:rgba(30,32,48,.9);}
-[data-theme=dark] .home-hub,[data-theme=anthracite] .home-hub{background:linear-gradient(145deg,#342437,#663c4e);}
-@media(max-width:390px){.tab-lb{font-size:.43rem}.tab svg{width:18px;height:18px}.tabbar{width:calc(100% - 18px)}}
 button,input,textarea,select{font-family:var(--f);border:none;outline:none;background:none;}
 svg{display:block;flex-shrink:0;}
 
@@ -1334,20 +1305,8 @@ body.offline-mode .offline-banner{display:block;}
 
   <!-- VIEWS -->
   <div class="vwrap">
-    <!-- VIEW: ACCUEIL -->
-    <div class="view on" id="vAccueil">
-      <div class="vb">
-        <header class="home-page-head">
-          <div class="home-eyebrow" id="homeGreeting">Bonjour 👋</div>
-          <h1 class="home-page-title">Votre journée, simplement.</h1>
-          <p class="home-page-sub">Courses, frigo et repas réunis au même endroit.</p>
-        </header>
-        <div id="homeSectionsRoot"></div>
-      </div>
-    </div>
-
     <!-- VIEW: LISTE -->
-    <div class="view" id="vListe">
+    <div class="view on" id="vListe">
       <div class="vb">
         <div class="lg-hello" id="lgHello">Bonjour 👋</div>
         <div class="lg-title">On s’occupe de quoi ?</div>
@@ -1920,11 +1879,7 @@ body.offline-mode .offline-banner{display:block;}
   <!-- FLOATING TABBAR -->
   <div class="tabbar">
     <div class="tb-inner">
-      <button type="button" class="tab on" id="tab-accueil" onclick="switchTab('accueil')" aria-label="Accueil">
-        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10M9.5 19.5v-6h5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span class="tab-lb">Accueil</span>
-      </button>
-      <button type="button" class="tab" id="tab-liste" onclick="switchTab('liste')" aria-label="Liste de courses">
+      <button type="button" class="tab on" id="tab-liste" onclick="switchTab('liste')" aria-label="Liste de courses">
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="tab-lb">Liste</span>
       </button>
@@ -3368,7 +3323,6 @@ applyTabletLayout();
 
 
 function switchTab(tab) {
-  if(tab === 'accueil') ensureHomeSections();
   _doSwitchTab(tab);
   if(tab === 'frigo') {
     loadRecipes().then(() => {
@@ -3412,24 +3366,8 @@ function _doSwitchTab(tab) {
     setTimeout(resetScroll, 400);
   }
   if(tab === 'menu') { initMenuModule(); }
-  if((tab === 'liste' || tab === 'accueil') && typeof updateHomeHub === 'function') updateHomeHub();
+  if(tab === 'liste' && typeof updateHomeHub === 'function') updateHomeHub();
 }
-
-function ensureHomeSections() {
-  const root = document.getElementById('homeSectionsRoot');
-  const listView = document.getElementById('vListe');
-  if(!root || !listView) return;
-  const hub = listView.querySelector('.home-hub');
-  const recipes = listView.querySelector('.daily-recipes');
-  if(hub) root.appendChild(hub);
-  if(recipes) root.appendChild(recipes);
-  const profileName = state?.profile?.name || state?.user?.name || '';
-  const firstName = String(profileName).trim().split(/\s+/)[0];
-  const greeting = document.getElementById('homeGreeting');
-  if(greeting) greeting.textContent = firstName ? `Bonjour, ${firstName} 👋` : 'Bonjour 👋';
-}
-
-document.addEventListener('DOMContentLoaded', ensureHomeSections);
 
 function switchSubtab(tab) {
   state.currentSubtab = tab;
