@@ -1141,6 +1141,111 @@ html,body,#app{overscroll-behavior:none;touch-action:pan-x pan-y;}
 @media(max-width:767px){
   input,select,textarea{font-size:16px!important;}
 }
+
+/* Unified editorial recipe system — inspired by Jow's reading hierarchy. */
+.recipe-editorial{
+  --recipe-paper:#fffaf1;
+  padding:0!important;
+  background:var(--recipe-paper)!important;
+  color:#251d1b;
+  border-radius:24px 24px 0 0!important;
+  overflow-x:hidden!important;
+}
+[data-theme=dark] .recipe-editorial,[data-theme=anthracite] .recipe-editorial{
+  --recipe-paper:var(--bg);
+  color:var(--tx);
+}
+.recipe-editorial>.mhdl{position:sticky;top:8px;z-index:30;margin:8px auto -12px;background:rgba(255,255,255,.82);box-shadow:0 1px 5px rgba(0,0,0,.12);}
+.recipe-editorial>button:first-of-type{position:sticky;top:12px;z-index:25;margin:12px 16px 0!important;padding:9px 12px!important;border-radius:999px;background:rgba(255,250,241,.9)!important;box-shadow:0 5px 18px rgba(45,26,46,.12);backdrop-filter:blur(10px);}
+.recipe-editorial>div:not(.mhdl),.recipe-editorial>button:not(:first-of-type),.recipe-editorial>a{margin-left:18px;margin-right:18px;}
+.recipe-editorial>div:has(>img:first-child){margin-left:0!important;margin-right:0!important;width:100%!important;}
+.recipe-editorial>div:has(>img:first-child) img{aspect-ratio:1.05/1!important;object-fit:cover!important;border-radius:0 0 28px 28px;}
+.recipe-editorial>div[style*="font-size:1.15rem"]{font-size:1.55rem!important;line-height:1.15!important;text-align:center;margin:22px 24px 10px!important;letter-spacing:-.45px;}
+.recipe-editorial #ingrTitle,.recipe-editorial div[style*="font-weight:900;font-size:.85rem"]{font-size:1.03rem!important;text-align:center;margin-top:25px!important;margin-bottom:14px!important;}
+.recipe-editorial #ingrList{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:6px;
+  margin:0 16px 24px!important;
+  background:transparent!important;
+  overflow:visible!important;
+}
+.recipe-editorial #ingrList>div{
+  min-height:116px;
+  padding:12px 7px!important;
+  display:flex!important;
+  flex-direction:column;
+  justify-content:center!important;
+  align-items:center!important;
+  gap:6px!important;
+  text-align:center;
+  border:1px solid rgba(45,26,46,.06)!important;
+  border-radius:17px;
+  background:rgba(255,255,255,.72);
+}
+.recipe-editorial #ingrList>div img{width:52px!important;height:52px!important;object-fit:contain!important;}
+.recipe-editorial #ingrList>div span{flex:0 0 auto!important;text-align:center!important;white-space:normal!important;font-size:.74rem;}
+.recipe-editorial #ingrList>div span:last-child{font-size:.67rem!important;color:var(--tx2)!important;}
+.recipe-editorial .spoon-recipe-tag{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.75);}
+.recipe-editorial>div[style*="position:sticky"]{
+  margin:18px 0 0!important;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom))!important;
+  background:color-mix(in srgb,var(--recipe-paper) 90%,transparent)!important;
+  backdrop-filter:blur(16px);
+}
+.recipe-editorial div[style*="line-height:1.6"]{font-size:.84rem!important;line-height:1.62!important;}
+.recipe-editorial div[style*="border-radius:50%"][style*="font-weight:900"]{box-shadow:0 5px 12px rgba(255,107,107,.2);}
+.recipe-quickfacts{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  margin:20px 0 24px!important;
+  padding:18px 14px;
+  background:#c9eff9;
+}
+.recipe-quickfact{text-align:center;padding:3px 5px;border-right:1px solid rgba(45,26,46,.08);}
+.recipe-quickfact:last-child{border-right:0;}
+.recipe-quickfact-icon{display:block;font-size:1.1rem;margin-bottom:5px;}
+.recipe-quickfact-value{display:block;font-size:.83rem;font-weight:900;}
+.recipe-quickfact-label{display:block;font-size:.58rem;color:#56656a;margin-top:2px;}
+.recipe-folds{margin:22px 0 0!important;border-top:1px solid rgba(45,26,46,.08);}
+.recipe-fold{
+  margin:0!important;
+  padding:0 18px;
+  background:rgba(255,255,255,.45);
+  border-bottom:1px solid rgba(45,26,46,.08);
+}
+.recipe-fold:nth-child(even){background:rgba(201,239,249,.66);}
+.recipe-fold summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 0;font-size:.9rem;font-weight:900;cursor:pointer;}
+.recipe-fold summary::-webkit-details-marker{display:none;}
+.recipe-fold summary::after{content:'⌄';font-size:1.1rem;transition:transform .2s;}
+.recipe-fold[open] summary::after{transform:rotate(180deg);}
+.recipe-fold-body{padding:0 0 16px;font-size:.77rem;color:var(--tx2);line-height:1.55;}
+.recipe-fold-values{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.recipe-fold-value{padding:10px;border-radius:12px;background:rgba(255,255,255,.75);}
+.recipe-fold-value strong{display:block;color:var(--tx);font-size:.9rem;}
+
+.spoon-grid{gap:12px!important;}
+.spoon-grid>.spoon-recipe-body,.spoon-recipe,.daily-card,.rc{
+  padding:0!important;
+  border-radius:20px!important;
+  background:var(--bg)!important;
+  border:1px solid rgba(45,26,46,.07)!important;
+  box-shadow:0 10px 28px rgba(45,26,46,.1)!important;
+}
+.spoon-grid>.spoon-recipe-body>img,.spoon-recipe-img,.daily-card>img,.rc>img{
+  width:100%!important;
+  aspect-ratio:4/3!important;
+  object-fit:cover!important;
+  border-radius:20px 20px 0 0!important;
+}
+.spoon-grid>.spoon-recipe-body>div:last-child,.spoon-recipe-body,.daily-body{padding:12px!important;}
+.daily-title,.spoon-recipe-name{font-size:.88rem!important;font-weight:900!important;line-height:1.3!important;}
+.daily-reason{font-size:.68rem!important;color:var(--gn)!important;font-weight:800!important;}
+.daily-card{display:block!important;min-width:220px;}
+@media(max-width:370px){
+  .recipe-editorial #ingrList{grid-template-columns:1fr 1fr;margin-left:10px!important;margin-right:10px!important;}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
@@ -4029,17 +4134,15 @@ function showRecipe(i) {
   const r = recipes[i];
   if(!r) return;
 
-  // Redirect to rich modal if available
-  if(r.source === 'claude' || r.source === 'custom' || r.source === 'claude_fridge') {
-    // Try to open via rich modal
-    const modal = document.getElementById('recipeDetailModal');
-    if(modal) {
-      window._currentRecipe = r;
-      window._currentPortions = r.portions || 4;
-      renderRecipeModal(r, window._currentPortions, false);
-      modal.parentElement.classList.add('on');
-      return;
-    }
+  // Every recipe source uses the same rich editorial sheet.
+  const modal = document.getElementById('recipeDetailModal');
+  if(modal && typeof renderRecipeModal === 'function') {
+    window._currentRecipe = r;
+    window._currentPortions = r.portions || 4;
+    const bookmarked = (state.recipeBookmarks || []).some(b => b.id === r.id);
+    renderRecipeModal(r, window._currentPortions, bookmarked);
+    modal.parentElement.classList.add('on');
+    return;
   }
 
   const fridgeNames = state.fridge.map(f => f.name.toLowerCase());
@@ -5185,6 +5288,7 @@ function _openJowRecipe(id) {
 
   const modal = document.getElementById('recipeDetailModal');
   if(!modal) return;
+  modal.classList.add('recipe-editorial');
   const isBookmarked = (state.recipeBookmarks||[]).some(function(b){ return b.id===recipe.id; });
 
   const ns     = recipe.nutriScore  || {};
@@ -6589,6 +6693,7 @@ function openSpoonRecipe(id) {
 function renderRecipeModal(recipe, portions, isBookmarked) {
   const modal = document.getElementById('recipeDetailModal');
   if(!modal) return;
+  modal.classList.add('recipe-editorial');
   
   // Normalize + store base ingredients (never mutate for re-use)
   if(!recipe._baseIngredients) {
@@ -6635,12 +6740,14 @@ function renderRecipeModal(recipe, portions, isBookmarked) {
 
   // fibres pour recettes non-Jow
   const scaledFibers = recipe.fibers ? Math.round(recipe.fibers * ratio) : 0;
+  const isCustomRecipe = (state.customRecipes || []).some(item => item.id === recipe.id);
 
   modal.innerHTML = `
     <div class="mhdl"></div>
     <button onclick="closeRecipeDetail()" style="display:inline-flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:var(--tx2);font-size:.82rem;font-weight:700;padding:0 0 12px 0;">← Retour</button>
     ${recipe.photo ? `<div style="width:calc(100% + 40px);margin:-20px -20px 16px;overflow:hidden;"><img src="${recipe.photo}" data-cands="${(recipe.photoCandidates||[]).join('|')}" loading="lazy" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:center top;display:block;" onerror="_imgFallback(this,(this.dataset.cands||'').split('|').filter(c=>c&&c!==this.src))"></div>` : ''}
     <div style="font-size:1.15rem;font-weight:900;margin-bottom:10px;line-height:1.3;">${frName}</div>
+    ${recipe.description ? `<div style="text-align:center;font-size:.8rem;color:var(--tx2);line-height:1.55;margin:0 24px 14px;">${recipe.description}</div>` : ''}
 
     <!-- Sélecteur de portions -->
     <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg2);border-radius:var(--rs);margin-bottom:12px;">
@@ -6661,6 +6768,12 @@ function renderRecipeModal(recipe, portions, isBookmarked) {
       ${scaledFat  ? `<span class="spoon-recipe-tag">🥑 ${scaledFat}g lipides</span>` : ''}
       ${scaledFibers ? `<span class="spoon-recipe-tag">🌿 ${scaledFibers}g fibres</span>` : ''}
     </div>` : ''}
+
+    <div class="recipe-quickfacts">
+      <div class="recipe-quickfact"><span class="recipe-quickfact-icon">🔪</span><span class="recipe-quickfact-value">${recipe.prepTime || Math.max(5, Math.round((recipe.time || 30) * .25))} min</span><span class="recipe-quickfact-label">Préparation</span></div>
+      <div class="recipe-quickfact"><span class="recipe-quickfact-icon">♨️</span><span class="recipe-quickfact-value">${recipe.cookTime || recipe.time || 30} min</span><span class="recipe-quickfact-label">Cuisson</span></div>
+      <div class="recipe-quickfact"><span class="recipe-quickfact-icon">🔥</span><span class="recipe-quickfact-value">${scaledKcal || '—'} kcal</span><span class="recipe-quickfact-label">Par portion</span></div>
+    </div>
 
     <!-- Ingrédients -->
     ${scaledIngr.length ? `
@@ -6684,9 +6797,30 @@ function renderRecipeModal(recipe, portions, isBookmarked) {
       </div>`).join('')}
     </div>` : ''}
 
+    <div class="recipe-folds">
+      <details class="recipe-fold">
+        <summary>Valeurs nutritionnelles</summary>
+        <div class="recipe-fold-body recipe-fold-values">
+          <div class="recipe-fold-value"><strong>${scaledKcal || '—'} kcal</strong>Calories</div>
+          <div class="recipe-fold-value"><strong>${scaledProt || '—'} g</strong>Protéines</div>
+          <div class="recipe-fold-value"><strong>${scaledCarb || '—'} g</strong>Glucides</div>
+          <div class="recipe-fold-value"><strong>${scaledFat || '—'} g</strong>Lipides</div>
+        </div>
+      </details>
+      <details class="recipe-fold">
+        <summary>Prix par portion</summary>
+        <div class="recipe-fold-body">${recipe.priceLabel || (recipe.pricePerPortionEuro ? Number(recipe.pricePerPortionEuro).toFixed(2) + ' € par personne' : 'Prix non renseigné pour cette recette.')}</div>
+      </details>
+      <details class="recipe-fold">
+        <summary>Scores et informations</summary>
+        <div class="recipe-fold-body">${recipe.nutriScore?.grade ? 'Nutri-Score ' + String(recipe.nutriScore.grade).toUpperCase() : 'Nutri-Score non disponible'}${recipe.greenScore?.grade ? ' · Green-Score ' + String(recipe.greenScore.grade).toUpperCase() : ''}${recipe.diet ? ' · ' + recipe.diet : ''}</div>
+      </details>
+    </div>
+
     <!-- Actions -->
     <div style="display:flex;gap:8px;position:sticky;bottom:0;z-index:10;background:var(--bg);padding:12px 0 calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--bg2);">
       <button class="btn acc" onclick="addSpoonRecipeToDay('${recipe.id}')" style="flex:1;padding:13px;border-radius:var(--rs);font-weight:800;">📅 Ajouter au menu</button>
+      ${isCustomRecipe ? `<button class="btn" onclick="closeRecipeDetail();editCustomRecipe('${recipe.id}')" title="Modifier la recette">✏️</button>` : ''}
       <button onclick="toggleBookmark('${recipe.id}')" style="padding:13px;border-radius:var(--rs);background:${isBookmarked?"rgba(246,211,101,.2)":"var(--bg2)"};border:none;font-size:1.1rem;cursor:pointer;">${isBookmarked?"⭐":"☆"}</button>
       ${recipe.sourceUrl ? `<a href="${recipe.sourceUrl}" target="_blank" style="padding:13px;border-radius:var(--rs);background:var(--bg2);color:var(--tx2);font-size:.75rem;display:flex;align-items:center;text-decoration:none;">🔗</a>` : ''}
     </div>
@@ -9057,53 +9191,10 @@ function openCustomRecipeDetail(id) {
   const r = (state.customRecipes||[]).find(x=>x.id===id);
   if(!r) return;
   window._currentRecipe = r;
-  const overlay = document.createElement('div');
-  overlay.className = 'overlay on';
-  overlay.id = 'customDetailOverlay';
-  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
-  const fridgeNames = state.fridge.map(f=>f.name.toLowerCase());
-  const ingredients = (r.ingredients||[]).map(i => typeof i==='string' ? {name:i,qty:'',unit:''} : i);
   const isBm = (state.recipeBookmarks||[]).some(b=>b.id===r.id);
-  overlay.innerHTML = `<div class="modal" style="max-height:90vh;overflow-y:auto;" id="customDetailModal">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div class="mhdl" style="margin:0;flex:1;"></div>
-      <button onclick="document.getElementById('customDetailOverlay').remove()" style="width:28px;height:28px;border-radius:50%;background:var(--bg2);border:none;cursor:pointer;font-size:.8rem;">✕</button>
-    </div>
-    ${r.photo?`<img src="${r.photo}" style="width:calc(100%+40px);margin:-20px -20px 14px;height:180px;object-fit:cover;display:block;" alt="${r.name}" data-cands="${(r.photoCandidates||[]).slice(1).join('|')}" onerror="_imgFallback(this,(this.dataset.cands||'').split('|').filter(Boolean))">`:''}
-    <div style="font-weight:900;font-size:1rem;margin-bottom:6px;">${r.name}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;">
-      ${r.time?`<span class="off-badge off-badge-blue">⏱ ${r.time}min</span>`:''}
-      ${r.portions?`<span class="off-badge off-badge-blue">🍽️ ${r.portions}pers.</span>`:''}
-      ${r.kcal?`<span class="off-badge off-badge-orange">🔥 ${r.kcal}kcal</span>`:''}
-      ${r.diet&&r.diet!=='omnivore'?`<span class="off-badge off-badge-green">${r.diet}</span>`:''}
-    </div>
-    <div style="font-size:.68rem;font-weight:800;color:var(--tx3);text-transform:uppercase;margin-bottom:8px;">Ingrédients</div>
-    <div style="margin-bottom:14px;">
-      ${ingredients.map(i=>{const have=fridgeNames.some(fn=>fn.includes((i.name||'').split(' ')[0].toLowerCase()));
-      return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--bg2);">'
-        +'<div style="width:6px;height:6px;border-radius:50%;background:'+(have?'var(--gn)':'var(--tx3)')+';flex-shrink:0;"></div>'
-        +'<div style="flex:1;font-size:.8rem;">'+(i.qty?'<span style="color:var(--tx2);font-size:.72rem;">'+i.qty+' '+i.unit+'</span> ':'')+i.name+'</div>'
-        +'<span style="font-size:.62rem;font-weight:700;color:'+(have?'var(--gn)':'var(--tx3)')+';">'+(have?'✓':'')+'</span>'
-        +'</div>';}).join('')}
-    </div>
-    ${r.instructions&&r.instructions.length?`<div style="font-size:.68rem;font-weight:800;color:var(--tx3);text-transform:uppercase;margin-bottom:8px;">Préparation</div>
-    <div style="margin-bottom:14px;">
-      ${r.instructions.map((s,i)=>'<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg2);">'
-        +'<div style="width:22px;height:22px;border-radius:50%;background:var(--grad);color:#fff;font-size:.68rem;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(i+1)+'</div>'
-        +'<div style="font-size:.78rem;line-height:1.6;">'+s+'</div></div>').join('')}
-    </div>`:''}
-    <div style="display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--bg2);">
-      <div style="display:flex;gap:8px;">
-        <button class="btn acc" style="flex:1;padding:12px;" onclick="editCustomRecipe('${r.id}');document.getElementById('customDetailOverlay').remove()">✏️ Modifier</button>
-        <button onclick="toggleBookmark('${r.id}')" style="padding:12px 14px;border-radius:var(--rs);background:${isBm?"rgba(246,211,101,.2)":"var(--bg2)"};border:none;font-size:1rem;cursor:pointer;">${isBm?"⭐":"☆"}</button>
-      </div>
-      <button class="btn" style="width:100%;padding:11px;color:var(--rd);" onclick="deleteCustomRecipe('${r.id}');document.getElementById('customDetailOverlay').remove()">🗑️ Supprimer cette recette</button>
-      <button class="btn" style="width:100%;padding:11px;" onclick="document.getElementById('customDetailOverlay').remove()">Fermer</button>
-    </div>
-  </div>`;
-  document.body.appendChild(overlay);
-  // Swipe down to close
-  _attachSwipeClose('customDetailModal', () => overlay.remove());
+  window._currentPortions = r.portions || 4;
+  renderRecipeModal(r, window._currentPortions, isBm);
+  document.getElementById('recipeDetailOverlay')?.classList.add('on');
 }
 
 function editCustomRecipe(id) {
