@@ -43,7 +43,7 @@
     if (document.getElementById('notificationBell')) return;
     const style = document.createElement('style');
     style.textContent = `
-      .notif-bell{position:fixed;right:74px;top:calc(12px + env(safe-area-inset-top));z-index:1600;width:42px;height:42px;border:0;border-radius:14px;background:var(--bg);color:var(--tx);box-shadow:var(--so);display:flex;align-items:center;justify-content:center;font-size:1.05rem}
+      .notif-bell{position:relative;z-index:1;width:38px;height:38px;flex:0 0 38px;border:0;border-radius:50%;background:var(--grad);color:#fff;box-shadow:4px 4px 10px rgba(255,107,107,.3);display:flex;align-items:center;justify-content:center;font-size:.92rem}
       .notif-count{position:absolute;right:-4px;top:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--rd);color:#fff;border:2px solid var(--bg);font-size:.58rem;font-weight:900;display:none;align-items:center;justify-content:center}
       .notif-sheet{position:fixed;inset:0;z-index:5000;background:rgba(20,12,25,.48);backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center}
       .notif-sheet.on{display:flex}.notif-panel{width:100%;max-width:520px;max-height:88dvh;background:var(--bg);border-radius:26px 26px 0 0;display:flex;flex-direction:column;box-shadow:0 -20px 60px rgba(0,0,0,.2)}
@@ -58,7 +58,7 @@
       .notif-settings{padding:16px 18px 26px;overflow:auto}.notif-setting{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--bg2)}
       .notif-setting-copy{flex:1}.notif-setting-title{font-size:.78rem;font-weight:900}.notif-setting-sub{font-size:.64rem;color:var(--tx2);margin-top:2px}
       .notif-switch{width:44px;height:25px;appearance:none;border-radius:13px;background:var(--tx3);position:relative;transition:.2s}.notif-switch::after{content:'';position:absolute;width:19px;height:19px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.2s}.notif-switch:checked{background:var(--ac)}.notif-switch:checked::after{transform:translateX(19px)}
-      @media(min-width:768px){.notif-bell{right:28px}.notif-sheet{align-items:center}.notif-panel{border-radius:26px;max-height:78dvh}}
+      @media(min-width:768px){.notif-sheet{align-items:center}.notif-panel{border-radius:26px;max-height:78dvh}}
     `;
     document.head.appendChild(style);
 
@@ -69,7 +69,10 @@
     bell.setAttribute('aria-label', 'Ouvrir les notifications');
     bell.innerHTML = '🔔<span class="notif-count" id="notificationCount"></span>';
     bell.onclick = openCenter;
-    document.body.appendChild(bell);
+    const topbarActions = document.querySelector('.topbar .tb-r');
+    const avatar = document.getElementById('avBtn');
+    if (topbarActions) topbarActions.insertBefore(bell, avatar || null);
+    else document.body.appendChild(bell);
 
     const sheet = document.createElement('div');
     sheet.id = 'notificationSheet';
@@ -228,12 +231,12 @@
     }
     const configResponse = await fetch(API_URL());
     const config = await configResponse.json();
-    if (!config.vapidKey) throw new Error('Clé VAPID non configurée sur le serveur');
     const registration = await navigator.serviceWorker.ready;
-    const token = await firebase.messaging().getToken({
-      vapidKey: config.vapidKey,
-      serviceWorkerRegistration: registration
-    });
+    const tokenOptions = { serviceWorkerRegistration: registration };
+    // Firebase can use its default Web Push key when no custom VAPID key is
+    // configured. This keeps push registration functional on existing projects.
+    if (config.vapidKey) tokenOptions.vapidKey = config.vapidKey;
+    const token = await firebase.messaging().getToken(tokenOptions);
     await api({ action: 'register_device', token, deviceId: deviceId() });
     preferences.push = true;
     await api({ action: 'save_preferences', preferences });

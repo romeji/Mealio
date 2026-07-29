@@ -21,6 +21,18 @@ const EVENT_TEMPLATES = {
     category: 'shopping', icon: '🛒', title: '{actor} a ajouté un article',
     body: '{itemName} a été ajouté à la liste de courses.', action: 'list'
   },
+  item_removed: {
+    category: 'shopping', icon: '🗑️', title: '{actor} a modifié la liste',
+    body: '{itemName} a été retiré de la liste de courses.', action: 'list'
+  },
+  item_checked: {
+    category: 'shopping', icon: '✅', title: '{actor} a trouvé un article',
+    body: '{itemName} a été coché dans la liste.', action: 'cart'
+  },
+  item_unchecked: {
+    category: 'shopping', icon: '↩️', title: '{actor} a remis un article',
+    body: '{itemName} est de nouveau à acheter.', action: 'list'
+  },
   shopping_started: {
     category: 'shopping', icon: '🧺', title: '{actor} commence les courses',
     body: 'La liste est en cours. Vous pouvez la suivre en direct.', action: 'cart'
@@ -32,6 +44,14 @@ const EVENT_TEMPLATES = {
   fridge_updated: {
     category: 'fridge', icon: '🥬', title: 'Frigo mis à jour',
     body: '{actor} a ajouté {count} produit(s) au frigo.', action: 'fridge'
+  },
+  fridge_item_added: {
+    category: 'fridge', icon: '🥬', title: '{actor} a rempli le frigo',
+    body: '{itemName} a été ajouté au stock.', action: 'fridge'
+  },
+  fridge_item_removed: {
+    category: 'fridge', icon: '📤', title: '{actor} a modifié le frigo',
+    body: '{itemName} a été retiré du stock.', action: 'fridge'
   },
   menu_planned: {
     category: 'meals', icon: '🍽️', title: 'Menu de la semaine prêt',

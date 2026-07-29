@@ -774,6 +774,7 @@ function addTicketToFridgeItems(items) {
     else { state.fridge.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5), name:it.name, emoji:it.emoji||'🛒', qty:1, cat:it.cat||'🍝 Épicerie'}); }
   });
   saveFridge();
+  window.MealioNotifications?.emit('fridge_updated', {count:items.length}, 'fridge_updated_ticket_' + Date.now());
   renderFridge();
 }
 
@@ -1202,6 +1203,7 @@ function _addSelectedFridgeItems(aliments) {
     }
   });
   saveFridge();
+  window.MealioNotifications?.emit('fridge_updated', {count:sel.size}, 'fridge_updated_scan_' + Date.now());
   renderFridge();
   document.getElementById('_fridgeScanSheet')?.remove();
   const total = sel.size;

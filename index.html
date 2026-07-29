@@ -2,7 +2,7 @@
 <html lang="fr" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="description" content="Mealio transforme vos courses, votre frigo et vos recettes en une routine simple et anti-gaspi.">
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -24,6 +24,8 @@
     const tc = document.querySelector('meta[name="theme-color"]');
     if(tc) tc.content = themeColor;
   } catch(e) {}
+  // PWA iOS: block pinch/double-tap zoom without affecting normal vertical scrolling.
+  document.addEventListener('gesturestart', event => event.preventDefault(), {passive:false});
   // Register SW for offline mode
   if('serviceWorker' in navigator){try{navigator.serviceWorker.register('./service-worker.js').then(reg=>{window._swReg=reg;console.log('[SW] ok');}).catch(e=>console.warn('[SW]',e));window.addEventListener('online',()=>{document.body.classList.remove('offline-mode');if(typeof showToast==='function')showToast('✅','En ligne','Connexion rétablie');});window.addEventListener('offline',()=>{document.body.classList.add('offline-mode');if(typeof showToast==='function')showToast('📵','Hors ligne','Mode local activé');});if(!navigator.onLine)document.body.classList.add('offline-mode');}catch(e){console.warn('[SW]',e);}}
 })();
@@ -1077,6 +1079,68 @@ body.offline-mode .offline-banner{display:block;}
 .nx-ai-icon{font-size:1rem;}
 .nx-ai-title{font-weight:900;font-size:.8rem;margin:3px 0 2px;}
 .nx-ai-body{font-size:.72rem;color:var(--tx2);line-height:1.5;}
+
+/* Targeted PWA polish: keeps Mealio's current visual identity. */
+html,body,#app{overscroll-behavior:none;touch-action:pan-x pan-y;}
+.scan-c{
+  border:1px solid color-mix(in srgb,var(--ac) 10%,transparent);
+  box-shadow:0 10px 28px rgba(45,26,46,.08);
+  min-height:150px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.scan-c-ic{width:54px;height:54px;margin:0 auto 12px;border-radius:17px;background:linear-gradient(135deg,rgba(255,107,107,.13),rgba(255,142,83,.08));display:flex;align-items:center;justify-content:center;}
+.scan-c-ti{font-size:.92rem;}
+.scan-c-su{font-size:.72rem;max-width:280px;margin:0 auto;}
+#vTicket .list-subtabs{padding:5px;border-radius:18px;box-shadow:var(--si);}
+#vTicket .list-subtab{min-height:42px;border-radius:14px;}
+
+.spoon-recipe,.spoon-grid>.spoon-recipe-body,.rc{
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--ac) 9%,transparent);
+  box-shadow:0 10px 28px rgba(45,26,46,.09);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.spoon-grid>.spoon-recipe-body{padding:0;border-radius:var(--rs);background:var(--bg);cursor:pointer;}
+.spoon-grid>.spoon-recipe-body img{transition:transform .25s ease;}
+.spoon-grid>.spoon-recipe-body:active,.spoon-recipe:active,.rc:active{transform:scale(.98);}
+.spoon-recipe-name{font-size:.88rem;line-height:1.35;}
+#recipeDetailOverlay{overflow:hidden;}
+#recipeDetailModal{
+  width:min(100%,520px);
+  max-width:520px;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+#recipeDetailModal img,#recipeDetailModal video{max-width:100%;}
+
+.profile-ov{overflow:hidden;touch-action:pan-y;}
+.profile-modal{
+  box-sizing:border-box;
+  max-width:min(480px,100vw);
+  width:100%;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+.profile-modal>*{max-width:100%;}
+.profile-row{min-width:0;gap:12px;}
+.profile-row label{min-width:0;flex:1;}
+.profile-row .inp,.profile-row select.inp{max-width:58%;min-width:0;}
+.profile-modal .inp-row{min-width:0;}
+.profile-modal .inp-row .inp{min-width:0;}
+@media(max-width:380px){
+  .profile-modal{padding-left:14px;padding-right:14px;}
+  .profile-row{align-items:flex-start;flex-direction:column;gap:6px;padding:10px 0;}
+  .profile-row .inp,.profile-row select.inp{width:100%!important;max-width:100%;}
+  .scan-grid{grid-template-columns:1fr;}
+}
+@media(max-width:767px){
+  input,select,textarea{font-size:16px!important;}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
@@ -2167,7 +2231,9 @@ const FIREBASE_CONFIG = {
 // URL de base de l'API serverless (Vercel) — les endpoints /api/... ne sont
 // jamais exécutables tels quels sur GitHub Pages (hébergement statique
 // uniquement, aucun backend possible) donc on force le domaine complet.
-const API_BASE = window.location.origin;
+const API_BASE = window.location.hostname.endsWith('github.io')
+  ? 'https://mealio-fr.vercel.app'
+  : window.location.origin;
 // Note sécurité : l'ancienne clé ANTHROPIC_KEY exposée en clair ici a été
 // retirée — elle n'était d'ailleurs jamais utilisée (les appels /api/claude
 // passent déjà par le backend Vercel qui détient la vraie clé côté serveur).
@@ -3059,6 +3125,7 @@ function addFridgeItemByName(name) {
   const emoji = prod ? prod.emoji : '🛍️';
   state.fridge.push({ id:'f'+Date.now(), name: prod ? prod.name : name, emoji, qty:1, addedAt:Date.now() });
   saveFridge();
+  window.MealioNotifications?.emit('fridge_item_added', {itemName:name}, 'fridge_item_added_' + Date.now());
   renderFridge();
 }
 
@@ -3348,14 +3415,26 @@ function switchTab(tab) {
       // (bannière "Gérez vos stocks", etc.) reste bien visible.
       const view = document.getElementById('vFrigo');
       const vb = view?.querySelector('.vb');
-      if(vb) vb.scrollTop = 0;
+      forceViewTop(vb);
     }).catch(() => {});
   }
   // Remove any premium lock overlay if present
   if(tab === 'menu') {
     const lock = document.getElementById('menuPremiumLockOverlay');
     if(lock) lock.remove();
+    const vb = document.getElementById('vMenu')?.querySelector('.vb');
+    setTimeout(() => forceViewTop(vb), 0);
+    setTimeout(() => forceViewTop(vb), 250);
+    setTimeout(() => forceViewTop(vb), 800);
   }
+}
+
+function forceViewTop(vb) {
+  if(!vb) return;
+  vb.style.scrollBehavior = 'auto';
+  vb.scrollTop = 0;
+  vb.scrollLeft = 0;
+  if(typeof vb.scrollTo === 'function') vb.scrollTo({top:0,left:0,behavior:'auto'});
 }
 
 function _doSwitchTab(tab) {
@@ -3369,16 +3448,14 @@ function _doSwitchTab(tab) {
     view.classList.add('on');
     const vb = view.querySelector('.vb');
     const resetScroll = () => {
-      if(!vb) return;
-      vb.style.scrollBehavior = 'auto';
-      vb.scrollTop = 0;
-      vb.scrollLeft = 0;
+      forceViewTop(vb);
     };
     resetScroll();
     requestAnimationFrame(() => { resetScroll(); requestAnimationFrame(resetScroll); });
     setTimeout(resetScroll, 50);
     setTimeout(resetScroll, 150);
     setTimeout(resetScroll, 400);
+    setTimeout(resetScroll, 900);
   }
   if(tab === 'menu') { initMenuModule(); }
   if((tab === 'liste' || tab === 'accueil') && typeof updateHomeHub === 'function') updateHomeHub();
@@ -3530,6 +3607,7 @@ function addFridgeItem() {
   if(ex) { ex.qty = (parseInt(ex.qty)||1) + 1; }
   else { state.fridge.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5),name:prod?prod.name:val,emoji:prod?prod.emoji:'🛒',qty:1,cat:prod?prod.cat:'🍝 Épicerie'}); }
   saveFridge(); inp.value = '';
+  window.MealioNotifications?.emit('fridge_item_added', {itemName:prod?prod.name:val}, 'fridge_item_added_' + Date.now());
   document.getElementById('acFridgeList').style.display = 'none';
   renderFridge();
   showToast('✅', prod?prod.name:val, 'Ajouté au frigo.');
@@ -3599,8 +3677,10 @@ function showFridgeMenu(id) {
 }
 
 function doDeleteFridge(id) {
+  const removed = state.fridge.find(f => f.id === id);
   state.fridge = state.fridge.filter(f => f.id !== id);
   saveFridge(); renderFridge();
+  if(removed) window.MealioNotifications?.emit('fridge_item_removed', {itemName:removed.name}, 'fridge_item_removed_' + id + '_' + Date.now());
   showToast('🗑️', 'Retiré', '');
 }
 

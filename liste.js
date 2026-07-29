@@ -119,6 +119,9 @@ function toggleCheck(id) {
   if(item.checked && shoppingWasIdle) {
     window.MealioNotifications?.emit('shopping_started', {}, 'shopping_started_' + new Date().toISOString().slice(0,10));
   }
+  window.MealioNotifications?.emit(item.checked ? 'item_checked' : 'item_unchecked', {
+    itemName:item.name
+  }, (item.checked ? 'item_checked_' : 'item_unchecked_') + item.id + '_' + Date.now());
 }
 
 function addItemFromInput() {
@@ -168,8 +171,10 @@ function addItemByName(name) {
 }
 
 function deleteItem(id) {
+  const removed = state.items.find(i => i.id === id);
   state.items = state.items.filter(i => i.id !== id);
   saveItems(); renderList();
+  if(removed) window.MealioNotifications?.emit('item_removed', {itemName:removed.name}, 'item_removed_' + id + '_' + Date.now());
   if(state.currentSubtab === 'cart') renderCart();
 }
 
