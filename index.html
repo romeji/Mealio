@@ -2208,6 +2208,89 @@ html[data-theme=light] #nutriRoot .nx-macro-bar{height:5px;}
   .daily-card{min-height:308px!important;}
   #nutriRoot .nx-bars{height:104px!important;}
 }
+
+/* ══ RECETTES DU MENU — même langage que l'accueil, format compact ══ */
+html[data-theme=light] #vMenu .spoon-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  column-gap:12px!important;
+  row-gap:68px!important;
+  align-items:start!important;
+  width:100%;
+  padding:62px 0 18px!important;
+  overflow:visible!important;
+}
+html[data-theme=light] #vMenu .recipe-unified-card,
+html[data-theme=light] #vMenu .spoon-recipe{
+  width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:250px!important;
+  max-height:none!important;
+  padding:66px 9px 48px!important;
+  align-self:start!important;
+  overflow:visible!important;
+  border-radius:19px!important;
+  background:#fff!important;
+  border:0!important;
+  box-shadow:0 7px 0 rgba(30,25,20,.065)!important;
+  text-align:center!important;
+}
+html[data-theme=light] #vMenu .recipe-unified-card>img,
+html[data-theme=light] #vMenu .spoon-recipe>.spoon-recipe-img{
+  position:absolute!important;
+  z-index:2!important;
+  top:-47px!important;
+  left:50%!important;
+  width:108px!important;
+  height:108px!important;
+  transform:translateX(-50%)!important;
+  aspect-ratio:1!important;
+  object-fit:cover!important;
+  border-radius:50%!important;
+  box-shadow:7px 8px 0 rgba(34,34,34,.32)!important;
+}
+html[data-theme=light] #vMenu .recipe-unified-card>div>div:first-child,
+html[data-theme=light] #vMenu .spoon-recipe-name{
+  min-height:42px!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  font-size:.78rem!important;
+  line-height:1.22!important;
+  font-weight:900!important;
+}
+html[data-theme=light] #vMenu .recipe-unified-card>div>div:nth-child(2),
+html[data-theme=light] #vMenu .spoon-recipe-meta{
+  justify-content:center!important;
+  gap:4px!important;
+}
+html[data-theme=light] #vMenu .recipe-unified-card [style*="font-size:.58rem"],
+html[data-theme=light] #vMenu .spoon-recipe-tag{
+  padding:4px 6px!important;
+  border-radius:9px!important;
+  font-size:.5rem!important;
+}
+
+@media(max-width:350px){
+  html[data-theme=light] #vMenu .spoon-grid{
+    column-gap:8px!important;
+    row-gap:62px!important;
+  }
+  html[data-theme=light] #vMenu .recipe-unified-card,
+  html[data-theme=light] #vMenu .spoon-recipe{
+    min-height:236px!important;
+    padding-left:6px!important;
+    padding-right:6px!important;
+  }
+  html[data-theme=light] #vMenu .recipe-unified-card>img,
+  html[data-theme=light] #vMenu .spoon-recipe>.spoon-recipe-img{
+    width:96px!important;
+    height:96px!important;
+    top:-41px!important;
+  }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
