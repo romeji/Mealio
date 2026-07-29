@@ -2292,6 +2292,15 @@ html[data-theme=light] #vMenu .spoon-recipe-tag{
   }
 }
 
+/* Garde une zone sûre sous l'en-tête sur les vues rendues de façon asynchrone. */
+@media(max-width:767px){
+  html[data-theme=light] #vFrigo>.vb,
+  html[data-theme=light] #vMenu>.vb{
+    padding-top:38px!important;
+    scroll-padding-top:38px;
+  }
+}
+
 /* ══ CARTE RECETTE UNIQUE — dérivée de « Recettes du moment » ══ */
 html[data-theme=light]{
   --mealio-recipe-card:#fff;
@@ -4378,7 +4387,11 @@ function renderAll() {
     requestAnimationFrame(() => {
       document.querySelectorAll('.view .vb').forEach(vb => {
         const viewId = vb.closest('.view')?.id;
-        if(viewId && scrollPositions[viewId] !== undefined) {
+        const forceTopUntil = Number(vb.dataset.forceTopUntil || 0);
+        if(forceTopUntil > Date.now()) {
+          vb.scrollTop = 0;
+          vb.scrollLeft = 0;
+        } else if(viewId && scrollPositions[viewId] !== undefined) {
           vb.scrollTop = scrollPositions[viewId];
         }
       });
@@ -4764,12 +4777,22 @@ function switchTab(tab) {
   }
 }
 
-function forceViewTop(vb) {
+function forceViewTop(vb, holdMs = 1400) {
   if(!vb) return;
+  vb.dataset.forceTopUntil = String(Date.now() + holdMs);
   vb.style.scrollBehavior = 'auto';
   vb.scrollTop = 0;
   vb.scrollLeft = 0;
   if(typeof vb.scrollTo === 'function') vb.scrollTo({top:0,left:0,behavior:'auto'});
+  const view = vb.closest('.view');
+  const wrap = vb.closest('.vwrap');
+  if(view) { view.scrollTop = 0; view.scrollLeft = 0; }
+  if(wrap) { wrap.scrollTop = 0; wrap.scrollLeft = 0; }
+  if(document.scrollingElement) {
+    document.scrollingElement.scrollTop = 0;
+    document.scrollingElement.scrollLeft = 0;
+  }
+  window.scrollTo(0, 0);
 }
 
 function _doSwitchTab(tab) {
@@ -5658,7 +5681,7 @@ function initMenuModule() {
         clearInterval(checkLoaded);
         const view = document.getElementById('vMenu');
         const vb = view?.querySelector('.vb');
-        if(vb) vb.scrollTop = 0;
+        forceViewTop(vb);
       }
     }, 200);
     // Ne pas laisser tourner indéfiniment si le chargement échoue
