@@ -1305,8 +1305,18 @@ body.offline-mode .offline-banner{display:block;}
 
   <!-- VIEWS -->
   <div class="vwrap">
+    <!-- VIEW: ACCUEIL -->
+    <div class="view on" id="vAccueil">
+      <div class="vb">
+        <div class="lg-hello" id="homeGreeting">Bonjour 👋</div>
+        <div class="lg-title">On s’occupe de quoi ?</div>
+        <div class="lg-sub">Votre journée avec Mealio</div>
+        <div id="homeSectionsRoot"></div>
+      </div>
+    </div>
+
     <!-- VIEW: LISTE -->
-    <div class="view on" id="vListe">
+    <div class="view" id="vListe">
       <div class="vb">
         <div class="lg-hello" id="lgHello">Bonjour 👋</div>
         <div class="lg-title">On s’occupe de quoi ?</div>
@@ -1879,7 +1889,11 @@ body.offline-mode .offline-banner{display:block;}
   <!-- FLOATING TABBAR -->
   <div class="tabbar">
     <div class="tb-inner">
-      <button type="button" class="tab on" id="tab-liste" onclick="switchTab('liste')" aria-label="Liste de courses">
+      <button type="button" class="tab on" id="tab-accueil" onclick="switchTab('accueil')" aria-label="Accueil">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10M9.5 19.5v-6h5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="tab-lb">Accueil</span>
+      </button>
+      <button type="button" class="tab" id="tab-liste" onclick="switchTab('liste')" aria-label="Liste de courses">
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="tab-lb">Liste</span>
       </button>
@@ -3323,6 +3337,7 @@ applyTabletLayout();
 
 
 function switchTab(tab) {
+  if(tab === 'accueil') ensureHomeSections();
   _doSwitchTab(tab);
   if(tab === 'frigo') {
     loadRecipes().then(() => {
@@ -3366,8 +3381,24 @@ function _doSwitchTab(tab) {
     setTimeout(resetScroll, 400);
   }
   if(tab === 'menu') { initMenuModule(); }
-  if(tab === 'liste' && typeof updateHomeHub === 'function') updateHomeHub();
+  if((tab === 'liste' || tab === 'accueil') && typeof updateHomeHub === 'function') updateHomeHub();
 }
+
+function ensureHomeSections() {
+  const root = document.getElementById('homeSectionsRoot');
+  const listView = document.getElementById('vListe');
+  if(!root || !listView) return;
+  const hub = listView.querySelector('.home-hub');
+  const recipes = listView.querySelector('.daily-recipes');
+  if(hub) root.appendChild(hub);
+  if(recipes) root.appendChild(recipes);
+  const profileName = state?.profile?.name || state?.user?.name || '';
+  const firstName = String(profileName).trim().split(/\s+/)[0];
+  const greeting = document.getElementById('homeGreeting');
+  if(greeting) greeting.textContent = firstName ? `Bonjour, ${firstName} 👋` : 'Bonjour 👋';
+}
+
+document.addEventListener('DOMContentLoaded', ensureHomeSections);
 
 function switchSubtab(tab) {
   state.currentSubtab = tab;
