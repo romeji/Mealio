@@ -2094,6 +2094,120 @@ html[data-theme=light] .recipe-unified-card [style*="font-size:.58rem"]{
   .recipe-unified-card>img{width:100px!important;height:100px!important;}
   #nutriRoot .nx-macros{grid-template-columns:1fr!important;}
 }
+
+/* ══ EDITORIAL COMPONENT POLISH — compact, lisible, tactile ══ */
+html[data-theme=light] .btn.ico,
+html[data-theme=light] .btn.sm.ico,
+html[data-theme=light] button[aria-label][class*="btn"]{
+  width:44px;
+  min-width:44px;
+  height:44px;
+  min-height:44px;
+  padding:0!important;
+  display:inline-grid;
+  place-items:center;
+  border-radius:50%!important;
+}
+html[data-theme=light] .btn:active,
+html[data-theme=light] .chip:active,
+html[data-theme=light] .diet-chip:active,
+html[data-theme=light] .menu-tab:active{transform:scale(.96);}
+html[data-theme=light] .menu-tabs,
+html[data-theme=light] .diet-chips,
+html[data-theme=light] #explorerTags{
+  scroll-snap-type:x proximity;
+  overscroll-behavior-x:contain;
+}
+html[data-theme=light] .menu-tab,
+html[data-theme=light] .diet-chip,
+html[data-theme=light] #explorerTags>*{scroll-snap-align:start;}
+html[data-theme=light] .spoon-search-bar{
+  padding:6px;
+  background:#fff;
+  border:1px solid rgba(23,23,23,.06);
+  border-radius:999px;
+}
+html[data-theme=light] .spoon-search-inp{
+  min-height:44px;
+  padding:0 14px;
+  background:transparent;
+  border:0;
+  outline:0;
+}
+html[data-theme=light] .spoon-search-bar .btn{border-radius:999px!important;}
+html[data-theme=light] #explorerTags .spoon-recipe-tag{
+  padding:9px 13px;
+  background:#fff;
+  color:#171717;
+  border:1px solid rgba(23,23,23,.055);
+  border-radius:999px;
+  box-shadow:none;
+}
+html[data-theme=light] #nutriRoot .nx-bars{
+  position:relative;
+  padding:12px 6px 0;
+  border-radius:14px;
+  background:
+    linear-gradient(to bottom,rgba(23,23,23,.055) 1px,transparent 1px) 0 0/100% 25%,
+    #fffaf2;
+}
+html[data-theme=light] #nutriRoot .nx-bar{
+  border-radius:999px 999px 4px 4px;
+  min-width:8px;
+}
+html[data-theme=light] #nutriRoot .nx-legend{
+  padding-top:10px;
+  border-top:1px solid #eee8de;
+}
+html[data-theme=light] #nutriRoot .nx-day-pill{
+  background:#fffaf2;
+  border:1px solid rgba(23,23,23,.045);
+}
+html[data-theme=light] #nutriRoot .nx-macro{
+  background:#fffaf2;
+  border:1px solid rgba(23,23,23,.045);
+}
+html[data-theme=light] #nutriRoot .nx-macro-bar{height:5px;}
+
+@media(max-width:767px){
+  .rc-grid{
+    grid-auto-rows:auto!important;
+    column-gap:9px!important;
+    row-gap:24px!important;
+  }
+  .rc{
+    height:auto!important;
+    min-height:238px!important;
+    max-height:none!important;
+    padding:60px 7px 52px!important;
+    align-self:start!important;
+  }
+  .rc-img-wrap{
+    top:-43px!important;
+    width:min(27vw,102px)!important;
+    height:min(27vw,102px)!important;
+  }
+  .rc-img-wrap img{
+    width:min(27vw,102px)!important;
+    height:min(27vw,102px)!important;
+    box-shadow:7px 8px 0 rgba(34,34,34,.32)!important;
+  }
+  .rc-nm{
+    min-height:38px!important;
+    font-size:.72rem!important;
+    line-height:1.18!important;
+  }
+  .rc-mt>span:nth-child(n+4){display:none!important;}
+  .rc .recipe-heart{
+    bottom:7px!important;
+    width:36px!important;
+    height:36px!important;
+    font-size:1.6rem!important;
+  }
+  .daily-grid{gap:12px!important;}
+  .daily-card{min-height:308px!important;}
+  #nutriRoot .nx-bars{height:104px!important;}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
