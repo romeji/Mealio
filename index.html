@@ -1106,12 +1106,20 @@ html,body,#app{overscroll-behavior:none;touch-action:pan-x pan-y;}
 .spoon-grid>.spoon-recipe-body img{transition:transform .25s ease;}
 .spoon-grid>.spoon-recipe-body:active,.spoon-recipe:active,.rc:active{transform:scale(.98);}
 .spoon-recipe-name{font-size:.88rem;line-height:1.35;}
-#recipeDetailOverlay{overflow:hidden;}
+#recipeDetailOverlay{
+  overflow:hidden;
+  box-sizing:border-box;
+  padding-top:max(8px,env(safe-area-inset-top));
+}
 #recipeDetailModal{
   width:min(100%,520px);
   max-width:520px;
+  max-height:calc(100dvh - max(8px,env(safe-area-inset-top)) - env(safe-area-inset-bottom))!important;
   overflow-x:hidden!important;
   overscroll-behavior:contain;
+  overflow-anchor:none;
+  scroll-behavior:auto!important;
+  scroll-padding-top:0;
   scrollbar-width:thin;
 }
 #recipeDetailModal img,#recipeDetailModal video{max-width:100%;}
@@ -4836,6 +4844,11 @@ function armViewTopGuard(vb) {
 }
 
 function _doSwitchTab(tab) {
+  // Un champ encore focus dans la vue précédente peut demander au navigateur
+  // de le remettre à l'écran après le changement d'onglet (notamment en PWA).
+  if(document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
   const tabEl = document.getElementById('tab-' + tab);
@@ -4849,6 +4862,15 @@ function _doSwitchTab(tab) {
     const resetScroll = () => {
       forceViewTop(vb);
     };
+    // Couper un instant le défilement annule aussi une éventuelle inertie
+    // provenant de la vue précédente sur Safari/iOS.
+    if(vb && (tab === 'frigo' || tab === 'menu')) {
+      vb.style.overflowY = 'hidden';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        vb.style.overflowY = 'auto';
+        forceViewTop(vb);
+      }));
+    }
     resetScroll();
     requestAnimationFrame(() => { resetScroll(); requestAnimationFrame(resetScroll); });
     setTimeout(resetScroll, 50);
@@ -5441,6 +5463,7 @@ function showRecipe(i) {
     const bookmarked = (state.recipeBookmarks || []).some(b => b.id === r.id);
     renderRecipeModal(r, window._currentPortions, bookmarked);
     modal.parentElement.classList.add('on');
+    resetRecipeDetailTop();
     return;
   }
 
@@ -6817,6 +6840,7 @@ style="height:36px;object-fit:contain;"
   `;
 
   modal.parentElement.classList.add('on');
+  resetRecipeDetailTop();
 }
 
 async function searchSpoonacular(query) {
@@ -7935,7 +7959,28 @@ function openClaudeRecipe(id) {
   if(typeof renderRecipeModal === "function") {
     renderRecipeModal(recipe, window._currentPortions, isBookmarked);
     document.getElementById("recipeDetailModal")?.parentElement?.classList.add("on");
+    resetRecipeDetailTop();
   }
+}
+
+function resetRecipeDetailTop() {
+  const modal = document.getElementById('recipeDetailModal');
+  if(!modal) return;
+  modal.style.scrollBehavior = 'auto';
+  const reset = () => {
+    modal.scrollTop = 0;
+    modal.scrollLeft = 0;
+    if(typeof modal.scrollTo === 'function') {
+      modal.scrollTo({top:0,left:0,behavior:'auto'});
+    }
+  };
+  reset();
+  requestAnimationFrame(() => {
+    reset();
+    requestAnimationFrame(reset);
+  });
+  setTimeout(reset, 80);
+  setTimeout(reset, 250);
 }
 
 
@@ -7987,6 +8032,7 @@ function openSpoonRecipe(id) {
   
   renderRecipeModal(recipe, window._currentPortions, isBookmarked);
   document.getElementById('recipeDetailModal').parentElement.classList.add('on');
+  resetRecipeDetailTop();
 }
 
 function renderRecipeModal(recipe, portions, isBookmarked) {
@@ -10494,6 +10540,7 @@ function openCustomRecipeDetail(id) {
   window._currentPortions = r.portions || 4;
   renderRecipeModal(r, window._currentPortions, isBm);
   document.getElementById('recipeDetailOverlay')?.classList.add('on');
+  resetRecipeDetailTop();
 }
 
 function editCustomRecipe(id) {
@@ -10563,9 +10610,17 @@ function openRecipeDetail(idOrName) {
   }
   renderRecipeModal(r, window._currentPortions, isBookmarked);
   document.getElementById('recipeDetailModal').parentElement.classList.add('on');
+  resetRecipeDetailTop();
 }
 
-function closeRecipeDetail() { document.getElementById('recipeDetailOverlay')?.classList.remove('on'); }
+function closeRecipeDetail() {
+  document.getElementById('recipeDetailOverlay')?.classList.remove('on');
+  const modal = document.getElementById('recipeDetailModal');
+  if(modal) {
+    modal.scrollTop = 0;
+    modal.scrollLeft = 0;
+  }
+}
 
 // Alias — ajouter une recette (Jow ou autre) au menu de la semaine
 function addSpoonRecipeToDay(idOrName) {
