@@ -2538,9 +2538,310 @@ html[data-theme=light] #app .vwrap{
 @supports not (height:100dvh){
   #app.on{height:100vh;min-height:100vh;}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MEALIO V4 — écrans validés
+   La navigation principale et la vue Liste ne sont volontairement pas ciblées.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.mealio-screen-v4{
+  --v4-coral:#ff5545;
+  --v4-ink:#171717;
+  --v4-cream:#fff8ee;
+  --v4-paper:#fff;
+  --v4-muted:#777068;
+  --v4-line:rgba(23,23,23,.09);
+  background:var(--v4-cream);
+  color:var(--v4-ink);
+}
+.mealio-page-kicker{
+  margin-bottom:8px;
+  color:var(--v4-coral);
+  font-size:.65rem;
+  font-weight:900;
+  letter-spacing:1.4px;
+}
+.mealio-screen-v4 .lg-title{color:var(--v4-ink);font-size:clamp(2rem,9vw,2.7rem)!important;line-height:.98!important;letter-spacing:-1.9px!important;}
+.mealio-screen-v4 .lg-sub{color:var(--v4-muted);font-size:.8rem!important;line-height:1.45;}
+
+/* Accueil */
+.mealio-home-v4 .lg-hello{margin:2px 0 10px;color:var(--v4-muted);font-size:.82rem!important;font-weight:700;}
+.mealio-home-v4>.lg-title{max-width:420px!important;}
+.mealio-home-v4>.lg-sub{margin-top:10px!important;}
+.mealio-home-v4 .home-hub{
+  margin-top:24px;
+  padding:20px!important;
+  border:1px solid var(--v4-line)!important;
+  border-radius:25px!important;
+  background:var(--v4-paper)!important;
+  box-shadow:none!important;
+}
+.mealio-home-v4 .home-hub-kicker{color:var(--v4-coral)!important;font-size:.62rem!important;letter-spacing:1.2px!important;}
+.mealio-home-v4 .home-hub-title{max-width:290px;color:var(--v4-ink)!important;font-size:1.35rem!important;line-height:1.08!important;}
+.mealio-home-v4 .home-hub-badge{background:#e8f3e5!important;color:#23834f!important;box-shadow:none!important;}
+.mealio-home-v4 .home-actions{gap:0!important;margin:18px 0!important;border-block:1px solid var(--v4-line);}
+.mealio-home-v4 .home-action{
+  min-height:86px;
+  padding:13px 8px!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.mealio-home-v4 .home-action+.home-action{border-left:1px solid var(--v4-line);}
+.mealio-home-v4 .home-action-ic{font-size:1.1rem!important;}
+.mealio-home-v4 .home-action-ic svg{width:21px;height:21px;color:var(--v4-coral);stroke-width:1.8;}
+.mealio-home-v4 .home-action-v{font-size:1.25rem!important;}
+.mealio-home-v4 .home-action-l{font-size:.62rem!important;}
+.mealio-home-v4 .home-next{
+  min-height:64px;
+  border:0!important;
+  border-radius:18px!important;
+  background:var(--v4-coral)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+.mealio-home-v4 .daily-recipes{
+  margin-top:30px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.mealio-home-v4 .daily-kicker{color:var(--v4-coral)!important;font-size:.62rem!important;letter-spacing:1.2px!important;}
+.mealio-home-v4 .daily-head h2{max-width:350px;color:var(--v4-ink)!important;font-size:1.75rem!important;line-height:1.03!important;letter-spacing:-1px;}
+.mealio-home-v4 .daily-head .btn{width:42px;height:42px;border:1px solid var(--v4-line);border-radius:50%;background:#fff;box-shadow:none;}
+.mealio-home-v4 .daily-head .btn svg{width:18px;height:18px;}
+.mealio-home-v4 .daily-grid{gap:14px!important;padding:54px 2px 8px!important;}
+.mealio-home-v4 .daily-card{
+  flex-basis:min(72vw,270px)!important;
+  min-height:310px!important;
+  padding:112px 16px 18px!important;
+  border:1px solid var(--v4-line)!important;
+  border-radius:24px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.mealio-home-v4 .daily-card>img{
+  top:-48px!important;
+  width:158px!important;
+  height:158px!important;
+  border-radius:50%!important;
+  filter:drop-shadow(8px 9px 0 rgba(30,30,30,.22));
+  box-shadow:none!important;
+}
+
+/* Scanner */
+.mealio-scan-v4>.list-subtabs{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px!important;
+  margin:22px 0!important;
+  padding:5px!important;
+  border:1px solid var(--v4-line);
+  border-radius:22px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.mealio-scan-v4>.list-subtabs .list-subtab{
+  display:flex!important;
+  min-height:66px;
+  padding:9px 3px!important;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border:0!important;
+  border-radius:17px!important;
+  background:transparent!important;
+  color:var(--v4-muted)!important;
+}
+.mealio-scan-v4>.list-subtabs .list-subtab svg{width:20px;height:20px;stroke-width:1.8;}
+.mealio-scan-v4>.list-subtabs .list-subtab.on{background:var(--v4-coral)!important;color:#fff!important;box-shadow:none!important;}
+.mealio-scan-v4 .card{
+  padding:18px!important;
+  border:1px solid var(--v4-line)!important;
+  border-left:1px solid var(--v4-line)!important;
+  border-radius:22px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.mealio-scan-v4 .scan-c{
+  min-height:300px;
+  padding:34px 20px!important;
+  border:1px solid var(--v4-line)!important;
+  border-radius:26px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.mealio-scan-v4 .scan-c-ic{font-size:2.3rem!important;}
+.mealio-scan-v4 .scan-c-ti{font-size:1.18rem!important;letter-spacing:-.35px;}
+.mealio-scan-v4 .scan-c-su{max-width:330px;margin:8px auto 0;color:var(--v4-muted)!important;line-height:1.5;}
+.mealio-scan-v4 .cam-area{border-radius:24px!important;background:#191919!important;}
+.mealio-scan-v4 .btn.acc{background:var(--v4-coral)!important;box-shadow:none!important;}
+
+/* Frigo */
+.mealio-fridge-v4 .fridge-hero{
+  display:block;
+  padding:20px!important;
+  border:1px solid var(--v4-line)!important;
+  border-radius:24px!important;
+  background:#fff!important;
+  color:var(--v4-ink)!important;
+  box-shadow:none!important;
+}
+.mealio-fridge-v4 .fridge-hero>div:nth-child(-n+2){display:none!important;}
+.mealio-fridge-v4 .fridge-hero>.mealio-page-kicker,
+html[data-theme=light] .mealio-fridge-v4 .fridge-hero>.mealio-page-kicker{margin-bottom:8px!important;color:var(--v4-coral)!important;font-size:.65rem!important;letter-spacing:1.4px!important;}
+.mealio-fridge-v4 .fridge-hero>div:nth-of-type(4){color:var(--v4-ink)!important;font-size:1.8rem!important;line-height:1!important;letter-spacing:-1px;}
+.mealio-fridge-v4 .fridge-hero>div:nth-of-type(5){margin-top:8px;color:var(--v4-muted)!important;}
+.mealio-fridge-v4 .fridge-hero>div:nth-of-type(6){margin-top:16px!important;padding-top:15px;border-top:1px solid var(--v4-line);}
+.mealio-fridge-v4 .fridge-hero [id$="Badge"]{padding:7px 11px!important;background:#f4eee5!important;color:var(--v4-ink)!important;}
+.mealio-fridge-v4>.card{
+  padding:17px!important;
+  border:1px solid var(--v4-line)!important;
+  border-left:1px solid var(--v4-line)!important;
+  border-radius:22px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.mealio-fridge-v4 .inp{min-height:50px;border:1px solid var(--v4-line)!important;border-radius:17px!important;background:#fff!important;box-shadow:none!important;}
+.mealio-fridge-v4 .btn{box-shadow:none!important;}
+.mealio-fridge-v4 .btn.acc{background:var(--v4-coral)!important;}
+.mealio-fridge-v4 .sechd{margin-top:28px!important;}
+.mealio-fridge-v4 .sec-ti{font-size:1.25rem!important;color:var(--v4-ink)!important;}
+.mealio-fridge-v4 .fgrid-beautiful>div{border:1px solid var(--v4-line)!important;background:#fff!important;box-shadow:none!important;}
+.mealio-fridge-v4 .rc-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:66px 12px!important;padding-top:54px!important;}
+.mealio-fridge-v4 .rc{
+  min-height:250px!important;
+  padding:70px 10px 50px!important;
+  border:1px solid var(--v4-line)!important;
+  border-radius:22px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.mealio-fridge-v4 .rc-img-wrap,
+.mealio-fridge-v4 .rc-img-wrap img{width:128px!important;height:128px!important;border-radius:50%!important;}
+.mealio-fridge-v4 .rc-img-wrap{top:-54px!important;filter:drop-shadow(7px 8px 0 rgba(30,30,30,.2));}
+
+/* Menu — parcours épuré validé */
+#vMenu.journey-active #menuVb>div:first-child,
+#vMenu.journey-active #menuTabBar{display:none!important;}
+#vMenu.journey-active #menuVb{padding-top:14px!important;}
+.menu-journey-v4{
+  --mj-coral:#ff5545;
+  --mj-ink:#171717;
+  display:flex;
+  width:min(100%,560px);
+  min-height:calc(100% - 20px);
+  margin:0 auto;
+  padding:12px 10px 24px;
+  flex-direction:column;
+  align-items:center;
+  color:var(--mj-ink);
+}
+.menu-journey-progress{width:min(76%,300px);height:4px;margin:2px auto 30px;border-radius:99px;background:#ded8ce;overflow:hidden;}
+.menu-journey-progress span{display:block;width:34%;height:100%;border-radius:inherit;background:var(--mj-coral);}
+.menu-journey-step{margin-bottom:13px;color:var(--mj-coral);font-size:.62rem;font-weight:900;letter-spacing:1.3px;}
+.menu-journey-v4 h2{margin:0;font-size:clamp(2rem,9vw,2.65rem);line-height:1;letter-spacing:-1.6px;}
+.menu-journey-v4>p{margin:10px 0 30px;color:#716b63;font-size:.82rem;}
+.menu-diet-grid-v4{display:grid;width:100%;max-width:440px;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;}
+.menu-diet-choice-v4{
+  display:flex;
+  min-height:124px;
+  padding:14px 8px;
+  border:0;
+  border-radius:20px;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  background:transparent;
+  color:#817a72;
+  cursor:pointer;
+}
+.menu-diet-choice-v4 svg{width:50px;height:50px;stroke-width:1.25;}
+.menu-diet-choice-v4 span{color:var(--mj-ink);font-size:.8rem;font-weight:800;}
+.menu-diet-choice-v4.on{background:#fff;border:1.5px solid var(--mj-coral);color:var(--mj-coral);}
+.menu-diet-choice-v4.on span{color:var(--mj-coral);}
+.menu-journey-next-v4{
+  width:100%;
+  max-width:440px;
+  min-height:54px;
+  margin-top:auto;
+  border:0;
+  border-radius:18px;
+  background:var(--mj-coral);
+  color:#fff;
+  font-size:.9rem;
+  font-weight:900;
+  cursor:pointer;
+}
+.menu-journey-skip-v4{margin-top:14px;padding:8px;border:0;background:transparent;color:var(--mj-coral);font-size:.72rem;text-decoration:underline;cursor:pointer;}
+
+/* Recettes, Explorer et Nutrition — navigation Menu existante conservée */
+#menuPanelRecipes .spoon-grid,
+#menuPanelSearch .spoon-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:68px 12px!important;padding-top:58px!important;}
+#menuPanelRecipes .recipe-unified-card,
+#menuPanelSearch .recipe-unified-card,
+#menuPanelSearch .spoon-recipe{
+  min-height:250px!important;
+  padding:72px 10px 48px!important;
+  border:1px solid rgba(23,23,23,.09)!important;
+  border-radius:22px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+#menuPanelRecipes .recipe-unified-card>img,
+#menuPanelSearch .recipe-unified-card>img,
+#menuPanelSearch .spoon-recipe>.spoon-recipe-img{
+  top:-52px!important;
+  width:128px!important;
+  height:128px!important;
+  border-radius:50%!important;
+  filter:drop-shadow(7px 8px 0 rgba(30,30,30,.2));
+  box-shadow:none!important;
+}
+#menuPanelRecipes .diet-chip,
+#menuPanelSearch .spoon-recipe-tag{border:1px solid rgba(23,23,23,.08)!important;background:#fff!important;box-shadow:none!important;}
+#menuPanelRecipes .diet-chip.on{background:#171717!important;color:#fff!important;}
+#menuPanelSearch .spoon-search-bar{gap:8px;}
+#menuPanelSearch .spoon-search-inp{min-height:52px;border:1px solid rgba(23,23,23,.1)!important;border-radius:18px!important;background:#fff!important;box-shadow:none!important;}
+#menuPanelSearch .btn.acc{background:#ff5545!important;box-shadow:none!important;}
+#menuPanelNutri .nx-hero{
+  border-radius:25px!important;
+  background:#fff!important;
+  color:#171717!important;
+  border:1px solid rgba(23,23,23,.09)!important;
+  box-shadow:none!important;
+}
+#menuPanelNutri .nx-card,
+#menuPanelNutri .nx-stat,
+#menuPanelNutri .nx-ai-card{border:1px solid rgba(23,23,23,.09)!important;border-radius:22px!important;background:#fff!important;box-shadow:none!important;}
+#menuPanelNutri .nx-hero-btn{background:#ff5545!important;color:#fff!important;box-shadow:none!important;}
+
+/* Fiche recette */
+#recipeDetailOverlay{background:rgba(20,18,16,.46)!important;backdrop-filter:blur(6px)!important;}
+#recipeDetailModal.recipe-editorial{--recipe-paper:#fff8ee!important;border-radius:28px 28px 0 0!important;}
+.recipe-editorial>div:has(>img:first-child) img{aspect-ratio:1/1!important;border-radius:0 0 30px 30px!important;}
+.recipe-editorial>div[style*="font-size:1.15rem"]{color:#171717!important;font-size:1.8rem!important;line-height:1.05!important;letter-spacing:-1.1px!important;}
+.recipe-editorial #ingrList>div{border:1px solid rgba(23,23,23,.08)!important;border-radius:17px!important;background:#fff!important;box-shadow:none!important;}
+.recipe-editorial>div[style*="position:sticky"]{background:rgba(255,248,238,.94)!important;border-top:1px solid rgba(23,23,23,.08)!important;box-shadow:none!important;}
+
+@media(max-width:380px){
+  .menu-diet-choice-v4{min-height:108px;}
+  .menu-diet-choice-v4 svg{width:43px;height:43px;}
+  .mealio-fridge-v4 .rc,
+  #menuPanelRecipes .recipe-unified-card,
+  #menuPanelSearch .recipe-unified-card,
+  #menuPanelSearch .spoon-recipe{min-height:238px!important;}
+}
+[data-theme=dark] .mealio-screen-v4,
+[data-theme=anthracite] .mealio-screen-v4{--v4-cream:var(--bg);--v4-paper:var(--bg2);--v4-ink:var(--tx);--v4-muted:var(--tx2);--v4-line:rgba(255,255,255,.1);}
+[data-theme=dark] .menu-diet-choice-v4.on,
+[data-theme=anthracite] .menu-diet-choice-v4.on{background:var(--bg2);}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="mealio-quality.js"></script>
 <script src="recipe-store.js"></script>
 <script src="api-client.js"></script>
@@ -2767,10 +3068,10 @@ html[data-theme=light] #app .vwrap{
   <div class="vwrap">
     <!-- VIEW: ACCUEIL -->
     <div class="view on" id="vAccueil">
-      <div class="vb">
+      <div class="vb mealio-screen-v4 mealio-home-v4">
         <div class="lg-hello" id="homeGreeting">Bonjour 👋</div>
-        <div class="lg-title">On s’occupe de quoi ?</div>
-        <div class="lg-sub">Courses, frigo et menus réunis au même endroit</div>
+        <div class="lg-title">On cuisine quoi aujourd’hui&nbsp;?</div>
+        <div class="lg-sub">Vos courses, votre frigo et vos menus au même endroit.</div>
         <div id="homeSectionsRoot"></div>
       </div>
     </div>
@@ -2792,17 +3093,17 @@ html[data-theme=light] #app .vwrap{
           </div>
           <div class="home-actions">
             <button class="home-action" type="button" onclick="focusShoppingInput()">
-              <span class="home-action-ic">🛒</span>
+              <span class="home-action-ic"><i data-lucide="shopping-basket"></i></span>
               <span class="home-action-v" id="homeBuyValue">0</span>
               <span class="home-action-l">à acheter</span>
             </button>
             <button class="home-action" type="button" onclick="switchTab('frigo')">
-              <span class="home-action-ic">🥬</span>
+              <span class="home-action-ic"><i data-lucide="refrigerator"></i></span>
               <span class="home-action-v" id="homeFridgeValue">0</span>
               <span class="home-action-l">au frigo</span>
             </button>
             <button class="home-action" type="button" onclick="switchTab('menu')">
-              <span class="home-action-ic">🍽️</span>
+              <span class="home-action-ic"><i data-lucide="utensils"></i></span>
               <span class="home-action-v" id="homeMealValue">0</span>
               <span class="home-action-l">repas prévus</span>
             </button>
@@ -2820,7 +3121,7 @@ html[data-theme=light] #app .vwrap{
               <h2 id="dailyRecipesTitle">Découvrez les recettes du moment</h2>
               <div id="dailyRecipesSubtitle">Selon la saison, votre profil et votre frigo</div>
             </div>
-            <button type="button" class="btn sm" onclick="refreshDailyRecipes()" aria-label="Afficher d’autres recettes">↻</button>
+            <button type="button" class="btn sm" onclick="refreshDailyRecipes()" aria-label="Afficher d’autres recettes"><i data-lucide="refresh-cw"></i></button>
           </div>
           <div id="dailyRecipesGrid" class="daily-grid" aria-live="polite"></div>
         </section>
@@ -2908,15 +3209,16 @@ html[data-theme=light] #app .vwrap{
 
     <!-- VIEW: SCAN -->
     <div class="view" id="vTicket">
-      <div class="vb">
-        <div class="lg-title">Scan 📷</div>
-        <div class="lg-sub" style="margin-bottom:14px;">Ticket de caisse · Code-barres</div>
+      <div class="vb mealio-screen-v4 mealio-scan-v4">
+        <div class="mealio-page-kicker">AJOUT RAPIDE</div>
+        <div class="lg-title">Scanner</div>
+        <div class="lg-sub" style="margin-bottom:14px;">Ajoutez vos produits sans les saisir.</div>
 
         <!-- Sous-onglets -->
         <div class="list-subtabs" style="margin-bottom:18px;display:flex;gap:4px;">
-          <div class="list-subtab on" id="scan-stab-ticket" onclick="switchScanTab('ticket')" style="flex:1;font-size:.72rem;">🧾 Ticket</div>
-          <div class="list-subtab" id="scan-stab-barcode" onclick="switchScanTab('barcode')" style="flex:1;font-size:.72rem;">🔍 Barcode</div>
-          <div class="list-subtab" id="scan-stab-fridge" onclick="switchScanTab('fridge')" style="flex:1;font-size:.72rem;">📸 Frigo IA</div>
+          <div class="list-subtab on" id="scan-stab-ticket" onclick="switchScanTab('ticket')" style="flex:1;font-size:.72rem;"><i data-lucide="receipt-text"></i><span>Ticket</span></div>
+          <div class="list-subtab" id="scan-stab-barcode" onclick="switchScanTab('barcode')" style="flex:1;font-size:.72rem;"><i data-lucide="scan-barcode"></i><span>Code-barres</span></div>
+          <div class="list-subtab" id="scan-stab-fridge" onclick="switchScanTab('fridge')" style="flex:1;font-size:.72rem;"><i data-lucide="refrigerator"></i><span>Frigo IA</span></div>
         </div>
 
         <!-- ═══ MODULE TICKET ═══ -->
@@ -3082,13 +3384,14 @@ html[data-theme=light] #app .vwrap{
 
     <!-- VIEW: FRIGO -->
     <div class="view" id="vFrigo">
-      <div class="vb">
+      <div class="vb mealio-screen-v4 mealio-fridge-v4">
 
         <!-- HEADER HERO -->
         <div class="fridge-hero" style="background:var(--grad3);border-radius:var(--r);padding:18px 18px 14px;margin-bottom:14px;color:#fff;position:relative;overflow:hidden;">
           <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.08);"></div>
           <div style="position:absolute;bottom:-30px;right:30px;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.06);"></div>
-          <div style="font-size:1.15rem;font-weight:900;margin-bottom:2px;">Mon Frigo 🧊</div>
+          <div class="mealio-page-kicker">VOTRE INVENTAIRE</div>
+          <div style="font-size:1.15rem;font-weight:900;margin-bottom:2px;">Mon frigo</div>
           <div style="font-size:.75rem;opacity:.85;" id="fridgeHeroSub">Gérez vos stocks et découvrez des recettes</div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
             <div style="background:rgba(255,255,255,.18);border-radius:var(--rp);padding:4px 12px;font-size:.72rem;font-weight:800;" id="fridgeCountBadge">0 aliments</div>
@@ -3168,6 +3471,24 @@ html[data-theme=light] #app .vwrap{
 
       <!-- ═══ TAB: SEMAINE ═══ -->
       <div id="menuPanelWeek">
+        <section class="menu-journey-v4" id="menuJourneyV4">
+          <div class="menu-journey-progress"><span></span></div>
+          <div class="menu-journey-step">ÉTAPE 1 SUR 3</div>
+          <h2>Votre régime</h2>
+          <p>Avez-vous un régime particulier&nbsp;?</p>
+          <div class="menu-diet-grid-v4" id="menuDietGridV4">
+            <button type="button" class="menu-diet-choice-v4 on" data-v="omnivore" onclick="selectMenuJourneyDiet(this)"><i data-lucide="beef"></i><span>Omnivore</span></button>
+            <button type="button" class="menu-diet-choice-v4" data-v="veg" onclick="selectMenuJourneyDiet(this)"><i data-lucide="carrot"></i><span>Végétarien</span></button>
+            <button type="button" class="menu-diet-choice-v4" data-v="vegan" onclick="selectMenuJourneyDiet(this)"><i data-lucide="sprout"></i><span>Vegan</span></button>
+            <button type="button" class="menu-diet-choice-v4" data-v="gluten" onclick="selectMenuJourneyDiet(this)"><i data-lucide="wheat-off"></i><span>Sans gluten</span></button>
+            <button type="button" class="menu-diet-choice-v4" data-v="halal" onclick="selectMenuJourneyDiet(this)"><i data-lucide="badge-check"></i><span>Sans porc</span></button>
+            <button type="button" class="menu-diet-choice-v4" data-v="pesc" onclick="selectMenuJourneyDiet(this)"><i data-lucide="fish"></i><span>Pescétarien</span></button>
+          </div>
+          <button type="button" class="menu-journey-next-v4" onclick="continueMenuJourney()">Suivant</button>
+          <button type="button" class="menu-journey-skip-v4" onclick="showCurrentMenuWorkspace()">Voir ma semaine actuelle</button>
+        </section>
+
+        <div id="menuWeekWorkspaceV4" class="menu-week-workspace-v4" style="display:none;">
 
         <!-- Profil strip -->
         <div class="menu-profile-strip" id="menuProfileStrip" onclick="openMenuProfile()">
@@ -3272,6 +3593,7 @@ html[data-theme=light] #app .vwrap{
 
         <!-- Détail du jour -->
         <div id="dayDetail"></div>
+        </div>
       </div>
 
       <!-- ═══ TAB: MES RECETTES ═══ -->
@@ -4952,7 +5274,10 @@ function ensureHomeSections() {
   if(greeting) greeting.textContent = firstName ? `Bonjour, ${firstName} 👋` : 'Bonjour 👋';
 }
 
-document.addEventListener('DOMContentLoaded', ensureHomeSections);
+document.addEventListener('DOMContentLoaded', () => {
+  ensureHomeSections();
+  refreshMealioIcons();
+});
 
 function switchSubtab(tab) {
   state.currentSubtab = tab;
@@ -5783,6 +6108,14 @@ function renderFavoritesPanel() {
 
 
 function initMenuModule() {
+  refreshMealioIcons();
+  syncMenuJourneyDiet();
+  const menuView = document.getElementById('vMenu');
+  const journey = document.getElementById('menuJourneyV4');
+  const workspace = document.getElementById('menuWeekWorkspaceV4');
+  if(_menuTab === 'week' && journey && workspace && workspace.style.display === 'none') {
+    menuView?.classList.add('journey-active');
+  }
   updateMenuProfileCard();
   renderWeek();
   renderSeason();
@@ -5812,6 +6145,8 @@ function initMenuModule() {
 // ── Sous-onglets ────────────────────────────────────────────
 function switchMenuTab(tab) {
   _menuTab = tab;
+  const menuView = document.getElementById('vMenu');
+  if(tab !== 'week') menuView?.classList.remove('journey-active');
   ['week','recipes','search','nutri'].forEach(t => {
     const btn = document.getElementById('mtab-'+t);
     const panelId = 'menuPanel' + t.charAt(0).toUpperCase() + t.slice(1);
@@ -5826,6 +6161,49 @@ function switchMenuTab(tab) {
     const inp = document.getElementById('spoonSearchInp');
     if(inp) setTimeout(()=>inp.focus(), 100);
   }
+  refreshMealioIcons();
+}
+
+function refreshMealioIcons() {
+  requestAnimationFrame(() => {
+    try {
+      if(window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons({attrs:{'aria-hidden':'true','stroke-width':2}});
+      }
+    } catch(_) {}
+  });
+}
+
+function syncMenuJourneyDiet() {
+  const current = state.selectedDiet?.[0] || state.profile?.diet || 'omnivore';
+  document.querySelectorAll('#menuDietGridV4 .menu-diet-choice-v4').forEach(btn => {
+    btn.classList.toggle('on', btn.dataset.v === current);
+  });
+}
+
+function selectMenuJourneyDiet(button) {
+  if(!button) return;
+  document.querySelectorAll('#menuDietGridV4 .menu-diet-choice-v4').forEach(btn => btn.classList.toggle('on', btn === button));
+  const value = button.dataset.v || 'omnivore';
+  state.selectedDiet = [value];
+  state.profile = {...(state.profile || {}), diet:value};
+  saveState();
+}
+
+function showCurrentMenuWorkspace() {
+  document.getElementById('menuJourneyV4')?.style.setProperty('display','none');
+  document.getElementById('menuWeekWorkspaceV4')?.style.setProperty('display','block');
+  document.getElementById('vMenu')?.classList.remove('journey-active');
+  updateMenuProfileCard();
+  renderWeek();
+  requestAnimationFrame(() => forceViewTop(document.getElementById('menuVb')));
+}
+
+function continueMenuJourney() {
+  const selected = document.querySelector('#menuDietGridV4 .menu-diet-choice-v4.on');
+  if(selected) selectMenuJourneyDiet(selected);
+  showCurrentMenuWorkspace();
+  setTimeout(() => document.getElementById('menuGenBtn')?.scrollIntoView({behavior:'smooth',block:'center'}), 120);
 }
 
 // ── Sous-onglets de "Mes Recettes": Favoris / Toutes les recettes ──
