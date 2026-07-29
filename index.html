@@ -1773,6 +1773,327 @@ html[data-theme=light] .recipe-editorial .recipe-fold{
   html[data-theme=light] .rc{padding-left:9px!important;padding-right:9px!important;}
   html[data-theme=light] .rc-img-wrap,html[data-theme=light] .rc-img-wrap img{width:116px!important;height:116px!important;}
 }
+
+/* ══ RESPONSIVE PASS — accueil, frigo, recettes, menu et nutrition ══ */
+#foyerBadge,#syncBadge{display:none!important;}
+
+html[data-theme=light] .recipe-unified-card{
+  position:relative;
+  min-width:0;
+  min-height:292px;
+  padding:82px 12px 54px!important;
+  overflow:visible;
+  text-align:center;
+  background:#fff;
+  border:0;
+  border-radius:22px;
+  box-shadow:none;
+  cursor:pointer;
+}
+html[data-theme=light] .recipe-unified-card>img{
+  position:absolute;
+  z-index:1;
+  top:-46px;
+  left:50%;
+  width:124px!important;
+  height:124px!important;
+  transform:translateX(-50%);
+  aspect-ratio:1!important;
+  object-fit:cover!important;
+  border-radius:50%!important;
+  box-shadow:9px 10px 0 rgba(34,34,34,.36);
+}
+html[data-theme=light] .recipe-unified-card>button{
+  top:-32px!important;
+  right:8px!important;
+  width:38px!important;
+  height:38px!important;
+  background:#fff!important;
+  color:#171717!important;
+  box-shadow:0 3px 12px rgba(30,25,20,.12);
+}
+html[data-theme=light] .recipe-unified-card>div:not(:first-child){
+  padding:8px 0!important;
+}
+html[data-theme=light] .recipe-unified-card>div>div:first-child{
+  font-size:.9rem!important;
+  line-height:1.25;
+  min-height:46px;
+}
+html[data-theme=light] .recipe-unified-card [style*="font-size:.58rem"]{
+  display:inline-flex;
+  align-items:center;
+  padding:5px 7px;
+  background:#fff3e3;
+  border-radius:9px;
+  color:#171717!important;
+}
+
+@media(max-width:767px){
+  .topbar-in{padding-left:14px!important;padding-right:14px!important;}
+  .tb-logo{max-width:132px;}
+  .tb-logo-tx{font-size:1.42rem!important;}
+  .tb-r{gap:7px;}
+  .notif-bell,.av{width:38px!important;height:38px!important;}
+  .vb{
+    width:100%;
+    max-width:100%!important;
+    padding:24px 14px calc(110px + env(safe-area-inset-bottom))!important;
+    overflow-x:hidden;
+  }
+  .lg-hello{font-size:.82rem!important;}
+  .lg-title{
+    max-width:100%!important;
+    font-size:clamp(1.72rem,8vw,2rem)!important;
+    line-height:1.04!important;
+    letter-spacing:-1.1px!important;
+  }
+  .lg-sub{font-size:.78rem!important;line-height:1.35;}
+  .sechd{margin-top:24px!important;}
+  .sec-ti,.nx-card-title-txt{font-size:1.02rem!important;}
+
+  /* Accueil */
+  .home-hub{
+    margin-top:22px!important;
+    padding:18px 14px!important;
+    border-radius:20px!important;
+  }
+  .home-hub-head{align-items:flex-start!important;gap:8px;}
+  .home-hub-kicker{font-size:.61rem!important;}
+  .home-hub-title{
+    max-width:230px;
+    font-size:1.15rem!important;
+    line-height:1.18!important;
+  }
+  .home-hub-badge{padding:6px 9px!important;font-size:.62rem!important;white-space:nowrap;}
+  .home-actions{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+  .home-action{
+    width:100%;
+    min-width:0;
+    min-height:102px!important;
+    padding:10px 5px!important;
+    border-radius:15px!important;
+  }
+  .home-action-ic{font-size:1.15rem!important;}
+  .home-action-v{font-size:1.18rem!important;}
+  .home-action-l{font-size:.59rem!important;line-height:1.15;}
+  .home-next{
+    min-height:64px!important;
+    padding:12px 14px!important;
+  }
+  .home-next small{font-size:.58rem!important;}
+  .home-next strong{font-size:.78rem!important;line-height:1.25;}
+  .daily-recipes{
+    margin:28px -14px 18px!important;
+    padding-left:14px!important;
+    padding-right:14px!important;
+  }
+  .daily-head h2{font-size:1.45rem!important;max-width:245px!important;}
+  .daily-grid{padding-top:82px!important;}
+  .daily-card{
+    flex:0 0 min(72vw,245px)!important;
+    min-width:min(72vw,245px)!important;
+  }
+
+  /* Frigo : toujours deux cartes de recettes côte à côte */
+  .rc-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    align-items:stretch!important;
+    width:100%!important;
+    gap:10px!important;
+    padding:64px 0 8px!important;
+  }
+  .rc{
+    width:100%!important;
+    min-width:0!important;
+    min-height:270px!important;
+    padding:75px 8px 60px!important;
+    border-radius:19px!important;
+  }
+  .rc-img-wrap,.rc-img-wrap img{
+    width:min(31vw,120px)!important;
+    height:min(31vw,120px)!important;
+  }
+  .rc-img-wrap{top:-54px!important;}
+  .rc-nm{font-size:.78rem!important;min-height:43px!important;}
+  .rc-mt{gap:3px!important;}
+  .rc-mt>span{padding:4px 5px!important;font-size:.52rem!important;}
+  .recipe-heart{width:40px!important;height:40px!important;font-size:1.8rem!important;}
+  .fridge-hero{padding:20px 16px!important;}
+  .fridge-hero>div:nth-of-type(3){font-size:1.45rem!important;}
+  #vFrigo .card .add-row{display:grid!important;grid-template-columns:minmax(0,1fr) repeat(3,48px)!important;}
+  #vFrigo .card .ac-wrap{min-width:0;}
+  #vFrigo .card .add-row>.btn{width:48px!important;min-width:48px!important;padding:0!important;}
+
+  /* Menu : titres contenus et sous-navigation défilable */
+  #menuVb>.lg-title,
+  #vMenu .lg-title{font-size:1.8rem!important;}
+  #vMenu .lg-sub{
+    max-width:100%;
+    font-size:.7rem!important;
+    white-space:normal;
+  }
+  #menuTabBar{
+    width:calc(100% + 28px)!important;
+    margin-left:-14px!important;
+    padding-left:14px!important;
+    padding-right:14px!important;
+    overflow-x:auto!important;
+  }
+  #menuTabBar .menu-tab{
+    flex:0 0 auto!important;
+    min-width:max-content!important;
+    padding:9px 12px!important;
+    font-size:.68rem!important;
+  }
+  #menuPanelWeek,
+  #menuPanelRecipes,
+  #menuPanelSearch,
+  #menuPanelNutri,
+  #nutriRoot{width:100%;max-width:100%;min-width:0;overflow-x:hidden;}
+  .menu-profile-strip{padding:14px!important;}
+  .diet-chip{font-size:.68rem!important;padding:8px 11px!important;}
+  .menu-opt-row{gap:8px!important;flex-wrap:wrap;}
+  .menu-opt-row .inp{width:100%!important;max-width:100%!important;}
+  .meal-slot{min-width:0;padding:11px!important;}
+  .meal-slot-name{font-size:.78rem!important;overflow-wrap:anywhere;}
+
+  /* Mes recettes, Favoris et Explorer partagent exactement la même grille */
+  #favsGrid .spoon-grid,
+  #recipesGridAll .spoon-grid,
+  #jowResults .spoon-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    align-items:stretch;
+    gap:10px!important;
+    width:100%;
+    padding:58px 0 12px!important;
+  }
+  .recipe-unified-card{
+    width:100%!important;
+    min-width:0!important;
+    min-height:266px!important;
+    padding:68px 8px 50px!important;
+    border-radius:19px!important;
+  }
+  .recipe-unified-card>img{
+    top:-42px!important;
+    width:min(30vw,116px)!important;
+    height:min(30vw,116px)!important;
+  }
+  .recipe-unified-card>button{
+    top:-30px!important;
+    right:5px!important;
+    width:34px!important;
+    height:34px!important;
+  }
+  .recipe-unified-card>div>div:first-child{
+    min-height:42px!important;
+    font-size:.76rem!important;
+  }
+  .recipe-unified-card [style*="font-size:.58rem"]{
+    padding:4px 5px!important;
+    font-size:.51rem!important;
+  }
+  .spoon-search-bar{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:7px!important;
+  }
+  .spoon-search-inp{width:100%!important;min-width:0!important;font-size:.75rem!important;}
+  #explinfo{font-size:.62rem!important;line-height:1.4;}
+  #explorerTags{width:calc(100% + 14px);padding-right:14px;}
+  .spoon-recipe-tag{flex:0 0 auto;font-size:.65rem!important;}
+
+  /* Nutrition */
+  #nutriRoot .nx-hero{padding:19px 16px!important;border-radius:18px!important;}
+  #nutriRoot .nx-hero-label{font-size:.64rem!important;}
+  #nutriRoot .nx-hero-kcal{
+    max-width:100%;
+    font-size:clamp(1.7rem,10vw,2.15rem)!important;
+    letter-spacing:-1.5px!important;
+    overflow-wrap:anywhere;
+  }
+  #nutriRoot .nx-hero-sub{font-size:.68rem!important;}
+  #nutriRoot .nx-hero-chips{gap:5px!important;}
+  #nutriRoot .nx-chip{font-size:.55rem!important;padding:4px 7px!important;}
+  #nutriRoot .nx-stats{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  #nutriRoot .nx-stat{
+    min-width:0!important;
+    padding:11px 7px!important;
+  }
+  #nutriRoot .nx-stat:last-child:nth-child(odd){grid-column:1/-1;}
+  #nutriRoot .nx-stat-val{font-size:.78rem!important;overflow-wrap:anywhere;}
+  #nutriRoot .nx-stat-lbl{font-size:.48rem!important;}
+  #nutriRoot .nx-card{padding:12px!important;overflow:hidden;}
+  #nutriRoot .nx-card-title{gap:8px;align-items:flex-start;}
+  #nutriRoot .nx-card-title-txt{font-size:.88rem!important;line-height:1.2;}
+  #nutriRoot .nx-macros{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+  #nutriRoot .nx-macro{
+    min-width:0!important;
+    padding:8px!important;
+    gap:5px!important;
+  }
+  #nutriRoot .nx-macro-lbl{font-size:.63rem!important;}
+  #nutriRoot .nx-macro-val{font-size:.82rem!important;}
+  #nutriRoot .nx-macro-tgt,
+  #nutriRoot .nx-macro-st{font-size:.5rem!important;}
+  #nutriRoot .nx-bars{gap:2px!important;height:82px!important;}
+  #nutriRoot .nx-bar-val{font-size:.44rem!important;}
+  #nutriRoot .nx-bar-day{font-size:.52rem!important;}
+  #nutriRoot .nx-day-pill{
+    display:grid!important;
+    grid-template-columns:30px minmax(0,1fr) auto!important;
+    gap:6px!important;
+    padding:8px!important;
+  }
+  #nutriRoot .nx-day-pill-meals{
+    min-width:0;
+    font-size:.54rem!important;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  #nutriRoot .nx-day-pill-kcal{font-size:.58rem!important;white-space:nowrap;}
+
+  /* Profil et modales : uniquement du défilement vertical */
+  .profile-modal,.modal{width:100%!important;max-width:100%!important;overflow-x:hidden!important;}
+  .profile-section{padding:15px!important;}
+  .profile-row{gap:10px;min-width:0;}
+  .profile-row>div,.profile-row>label{min-width:0;}
+  .profile-row .inp,
+  .profile-row select.inp{max-width:52%!important;min-width:0!important;}
+  .modal [style*="grid-template-columns:1fr 1fr 1fr"]{
+    grid-template-columns:1fr!important;
+  }
+  .modal [style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media(max-width:350px){
+  .home-hub{padding:15px 10px!important;}
+  .home-action{min-height:96px!important;}
+  .rc-grid,
+  #favsGrid .spoon-grid,
+  #recipesGridAll .spoon-grid,
+  #jowResults .spoon-grid{gap:7px!important;}
+  .rc-img-wrap,.rc-img-wrap img,
+  .recipe-unified-card>img{width:100px!important;height:100px!important;}
+  #nutriRoot .nx-macros{grid-template-columns:1fr!important;}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
@@ -1994,7 +2315,6 @@ html[data-theme=light] .recipe-editorial .recipe-fold{
     <div id="syncBadge" style="display:none;font-size:.62rem;color:var(--tl);font-weight:700;background:rgba(0,210,198,.1);padding:4px 8px;border-radius:99px;">🔄 Sync</div>
     <div id="foyerBadge" style="display:none;font-size:.62rem;color:var(--bl);font-weight:700;background:rgba(52,152,219,.1);padding:4px 8px;border-radius:99px;cursor:pointer;" onclick="showFoyerModal()">👨‍👩‍👧 Foyer</div>
     <div class="tb-r">
-      <button class="btn sm" onclick="toggleTheme()" id="themeToggleBtn" style="padding:8px 10px;font-size:.85rem;" title="Changer de thème">🎨</button>
       <div class="av" id="avBtn" onclick="showProfile()">M</div>
     </div>
   </div>
@@ -2006,7 +2326,7 @@ html[data-theme=light] .recipe-editorial .recipe-fold{
       <div class="vb">
         <div class="lg-hello" id="homeGreeting">Bonjour 👋</div>
         <div class="lg-title">On s’occupe de quoi ?</div>
-        <div class="lg-sub">Votre journée avec Mealio</div>
+        <div class="lg-sub">Courses, frigo et menus réunis au même endroit</div>
         <div id="homeSectionsRoot"></div>
       </div>
     </div>
@@ -2741,6 +3061,18 @@ html[data-theme=light] .recipe-editorial .recipe-fold{
           <span style="font-size:.75rem;color:var(--tx2);">€/sem</span>
           <button class="btn sm acc" onclick="saveBudget()">OK</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Apparence -->
+    <div class="profile-section">
+      <div class="profile-section-title">🎨 Apparence</div>
+      <div class="profile-row">
+        <div>
+          <label>Thème de l’application</label>
+          <div style="font-size:.68rem;color:var(--tx2);margin-top:3px;">Clair, sombre ou anthracite</div>
+        </div>
+        <button class="btn sm" type="button" onclick="toggleTheme()" id="profileThemeBtn" style="min-width:94px;">Changer</button>
       </div>
     </div>
 
@@ -5785,7 +6117,7 @@ function _renderJowResults(rawList, query) {
     const metaRow = [kcalStr, timeStr, prBadge, nsBadge, gsBadge].filter(Boolean).join('');
     const habitsHtml = hBadges.length ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;">${hBadges.join('')}</div>` : '';
 
-    return `<div class="spoon-recipe-body" style="position:relative;" onclick="_openJowRecipe('${recipe.id}')" data-jow-id="${recipe.id}">
+    return `<div class="spoon-recipe-body recipe-unified-card" style="position:relative;" onclick="_openJowRecipe('${recipe.id}')" data-jow-id="${recipe.id}">
       <button onclick="event.stopPropagation();_jowToggleBookmark('${recipe.id}')" id="jbm_${recipe.id}"
         style="position:absolute;top:6px;right:6px;z-index:2;background:rgba(0,0,0,.45);border:none;border-radius:50%;width:28px;height:28px;font-size:.9rem;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;"
         title="${isBookmarked?'Retirer des favoris':'Ajouter aux favoris'}">${isBookmarked?'⭐':'☆'}</button>
@@ -9620,7 +9952,7 @@ function renderRecipesGrid() {
         <button onclick="event.stopPropagation();deleteCustomRecipe('${idEsc}')" style="flex:1;font-size:.6rem;padding:4px;background:rgba(231,76,60,.1);border:none;border-radius:var(--rx);cursor:pointer;font-weight:700;color:var(--rd);">🗑</button>
       </div>` : '';
 
-    return `<div class="spoon-recipe-body" style="position:relative;" onclick="${openFn}('${idEsc}')">
+    return `<div class="spoon-recipe-body recipe-unified-card" style="position:relative;" onclick="${openFn}('${idEsc}')">
       <button onclick="event.stopPropagation();toggleBookmark('${idEsc}');renderRecipesGrid()"
         style="position:absolute;top:6px;right:6px;z-index:2;background:rgba(0,0,0,.45);border:none;border-radius:50%;width:28px;height:28px;font-size:.9rem;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;"
         title="${isBm?'Retirer des favoris':'Ajouter aux favoris'}">${isBm?'⭐':'☆'}</button>
@@ -9702,7 +10034,7 @@ function renderFavsGrid() {
     const metaRow = [kcalStr, timeStr, prBadge, nsBadge, gsBadge].filter(Boolean).join('');
     const habitsHtml = hBadges.length ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;">${hBadges.join('')}</div>` : '';
 
-    return `<div class="spoon-recipe-body" style="position:relative;" onclick="openRecipeDetail('${idEsc}')">
+    return `<div class="spoon-recipe-body recipe-unified-card" style="position:relative;" onclick="openRecipeDetail('${idEsc}')">
       <button onclick="event.stopPropagation();toggleBookmark('${idEsc}');renderFavsGrid();"
         style="position:absolute;top:6px;right:6px;z-index:2;background:rgba(246,211,101,.35);backdrop-filter:blur(4px);border:none;border-radius:50%;width:28px;height:28px;font-size:.9rem;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;">⭐</button>
       ${r.photo && !r.photo.startsWith('data:')
