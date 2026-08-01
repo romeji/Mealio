@@ -2838,6 +2838,144 @@ html[data-theme=light] .mealio-fridge-v4 .fridge-hero>.mealio-page-kicker{margin
 [data-theme=anthracite] .mealio-screen-v4{--v4-cream:var(--bg);--v4-paper:var(--bg2);--v4-ink:var(--tx);--v4-muted:var(--tx2);--v4-line:rgba(255,255,255,.1);}
 [data-theme=dark] .menu-diet-choice-v4.on,
 [data-theme=anthracite] .menu-diet-choice-v4.on{background:var(--bg2);}
+
+/* Ajustements fidèles aux maquettes validées */
+html[data-theme=light] .topbar .tb-logo{position:absolute;left:50%;transform:translateX(-50%);}
+
+#menuVb>div:first-child{text-align:center!important;margin-bottom:16px!important;}
+#menuVb>div:first-child .lg-title{max-width:none!important;font-size:1.35rem!important;letter-spacing:-.5px!important;}
+#menuVb>div:first-child .lg-sub{display:none;}
+#menuTabBar{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0!important;
+  margin:0 -14px 20px!important;
+  padding:0 14px!important;
+  width:calc(100% + 28px)!important;
+  border-bottom:1px solid rgba(23,23,23,.09)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+#menuTabBar .menu-tab{
+  min-width:0!important;
+  padding:11px 2px 10px!important;
+  border:0!important;
+  border-bottom:2px solid transparent!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#171717!important;
+  font-size:.62rem!important;
+  box-shadow:none!important;
+}
+#menuTabBar .menu-tab.on{border-bottom-color:#ff5545!important;background:transparent!important;color:#ff5545!important;}
+
+#menuPanelWeek .menu-week-workspace-v4.on{display:flex!important;flex-direction:column;}
+#menuPanelWeek .menu-profile-strip{order:1;padding:11px 14px!important;border:1px solid rgba(23,23,23,.08)!important;border-radius:16px!important;background:#fff!important;box-shadow:none!important;}
+#menuPanelWeek #apiKeyBanner{order:1;}
+#menuPanelWeek .menu-week-workspace-v4>div[style*="text-transform:uppercase"]{order:2;margin:14px 2px 10px!important;color:#171717!important;text-transform:none!important;font-size:.9rem!important;letter-spacing:0!important;}
+#menuPanelWeek .week-overview-v4{order:3;}
+#menuPanelWeek #weekScroll{display:none!important;}
+#menuPanelWeek #dayDetail{order:4;scroll-margin-top:85px;}
+#menuPanelWeek #aiMenuResultZone{order:5;}
+#menuPanelWeek .menu-planner-card{
+  order:6;
+  position:sticky;
+  bottom:82px;
+  z-index:30;
+  margin:14px 0 0!important;
+  padding:8px!important;
+  border:0!important;
+  border-radius:20px!important;
+  background:rgba(255,248,238,.94)!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(14px);
+}
+#menuPanelWeek .menu-planner-card>div:first-child,
+#menuPanelWeek .menu-planner-card>#dietChips{display:none!important;}
+#menuPanelWeek .menu-planner-card #menuOptsPanel:not(.open){display:none!important;}
+#menuPanelWeek .menu-planner-card>div:last-child{margin-top:0!important;}
+#menuPanelWeek .menu-planner-card #menuGenBtn{min-height:50px!important;border-radius:16px!important;background:#ff5545!important;box-shadow:none!important;}
+.week-overview-v4{display:grid;gap:8px;margin-bottom:14px;}
+.week-overview-row-v4{
+  display:grid;
+  grid-template-columns:42px 58px minmax(0,1fr) 32px;
+  gap:10px;
+  min-height:76px;
+  padding:8px 8px 8px 4px;
+  border:1px solid rgba(23,23,23,.075);
+  border-radius:17px;
+  align-items:center;
+  background:#fff;
+  cursor:pointer;
+}
+.week-overview-row-v4.today{border-color:rgba(255,85,69,.45);}
+.week-overview-day-v4{display:flex;height:52px;border-right:1px solid rgba(23,23,23,.08);flex-direction:column;align-items:center;justify-content:center;}
+.week-overview-day-v4 span{font-size:.58rem;font-weight:800;text-transform:uppercase;color:#777068;}
+.week-overview-day-v4 strong{margin-top:2px;font-size:1rem;color:#171717;}
+.week-overview-row-v4>img,.week-overview-placeholder-v4{width:58px;height:58px;border-radius:50%;object-fit:cover;}
+.week-overview-placeholder-v4{display:flex;align-items:center;justify-content:center;background:#f5eee5;font-size:1.2rem;color:#ff5545;}
+.week-overview-copy-v4{min-width:0;}
+.week-overview-copy-v4 strong{display:-webkit-box;overflow:hidden;color:#171717;font-size:.78rem;line-height:1.25;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
+.week-overview-copy-v4 span{display:block;margin-top:5px;color:#777068;font-size:.61rem;}
+.week-overview-row-v4>button{display:flex;width:30px;height:30px;padding:0;border:0;border-radius:50%;align-items:center;justify-content:center;background:transparent;color:#777068;}
+.week-overview-row-v4>button svg{width:17px;height:17px;}
+
+#menuPanelRecipes #myRecipesTabs{display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important;margin-bottom:14px!important;}
+#menuPanelRecipes #myRecipesTabs .diet-chip{display:flex;min-height:42px;align-items:center;justify-content:center;border:1px solid rgba(23,23,23,.1)!important;border-radius:999px!important;background:#fff!important;color:#171717!important;}
+#menuPanelRecipes #myRecipesTabs .diet-chip.on{border-color:#ff5545!important;background:#ff5545!important;color:#fff!important;}
+#menuPanelRecipes #recipeSearch{min-height:48px!important;border:1px solid rgba(23,23,23,.1)!important;border-radius:16px!important;background:#fff!important;box-shadow:none!important;}
+#menuPanelRecipes #recipesGridAll .spoon-grid,
+#menuPanelRecipes #favsGrid .spoon-grid,
+#menuPanelSearch #jowResults .spoon-grid{gap:14px 10px!important;padding-top:8px!important;}
+#menuPanelRecipes .recipe-unified-card,
+#menuPanelSearch .recipe-unified-card,
+#menuPanelSearch .spoon-recipe{
+  min-height:278px!important;
+  padding:142px 10px 46px!important;
+  border:1px solid rgba(23,23,23,.08)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+}
+#menuPanelRecipes .recipe-unified-card>img,
+#menuPanelSearch .recipe-unified-card>img,
+#menuPanelSearch .spoon-recipe>.spoon-recipe-img{
+  top:10px!important;
+  width:124px!important;
+  height:124px!important;
+  max-width:calc(100% - 18px)!important;
+  filter:drop-shadow(5px 6px 0 rgba(30,30,30,.16));
+}
+#menuPanelSearch #explinfo{display:none!important;}
+#menuPanelSearch .spoon-search-bar{margin-bottom:12px!important;}
+#menuPanelSearch #explorerTags{margin-bottom:16px!important;}
+#menuPanelSearch #explorerTags .spoon-recipe-tag{min-height:40px;padding:8px 12px!important;border-radius:13px!important;}
+
+#menuPanelNutri #nutriRoot>div:first-child{margin-bottom:14px!important;}
+#menuPanelNutri .nx-hero{padding:22px!important;}
+#menuPanelNutri .nx-hero-label{color:#777068!important;}
+#menuPanelNutri .nx-hero-kcal{color:#171717!important;font-size:2.4rem!important;}
+#menuPanelNutri .nx-stats{gap:8px!important;}
+#menuPanelNutri .nx-stat{padding:14px 8px!important;}
+
+#recipeDetailModal.recipe-editorial{max-width:520px!important;background:#fff8ee!important;}
+.recipe-editorial>div:has(>img:first-child) img{width:100%!important;height:auto!important;aspect-ratio:1.14/1!important;object-fit:cover!important;}
+.recipe-editorial #ingrList{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;}
+.recipe-editorial #ingrList>div{min-height:116px!important;padding:10px 5px!important;}
+.recipe-editorial #ingrList>div img{width:58px!important;height:58px!important;}
+
+@media(max-width:360px){
+  #menuTabBar .menu-tab{font-size:.56rem!important;}
+  .week-overview-row-v4{grid-template-columns:36px 52px minmax(0,1fr) 28px;gap:7px;}
+  .week-overview-row-v4>img,.week-overview-placeholder-v4{width:52px;height:52px;}
+  #menuPanelRecipes .recipe-unified-card,
+  #menuPanelSearch .recipe-unified-card,
+  #menuPanelSearch .spoon-recipe{padding-top:126px!important;}
+  #menuPanelRecipes .recipe-unified-card>img,
+  #menuPanelSearch .recipe-unified-card>img,
+  #menuPanelSearch .spoon-recipe>.spoon-recipe-img{width:108px!important;height:108px!important;}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
@@ -3589,6 +3727,7 @@ html[data-theme=light] .mealio-fridge-v4 .fridge-hero>.mealio-page-kicker{margin
 
         <!-- Calendrier semaine -->
         <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);margin-bottom:8px;">📅 Semaine en cours</div>
+        <div id="weekOverviewV4" class="week-overview-v4"></div>
         <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;padding-bottom:4px;" id="weekScroll"></div>
 
         <!-- Détail du jour -->
@@ -3982,6 +4121,7 @@ let state = {
   fridge: [],
   history: [],
   weekMenu: {},
+  weekMenuDiet: null,
   selectedDiet: ['omnivore'],
   selectedAllergens: [],
   filterCat: 'all',
@@ -6188,11 +6328,15 @@ function selectMenuJourneyDiet(button) {
   state.selectedDiet = [value];
   state.profile = {...(state.profile || {}), diet:value};
   saveState();
+  if(typeof syncToFirestore === 'function') syncToFirestore('profile', state.profile).catch(()=>{});
+  updateMenuProfileCard();
 }
 
 function showCurrentMenuWorkspace() {
   document.getElementById('menuJourneyV4')?.style.setProperty('display','none');
-  document.getElementById('menuWeekWorkspaceV4')?.style.setProperty('display','block');
+  const workspace = document.getElementById('menuWeekWorkspaceV4');
+  workspace?.style.setProperty('display','block');
+  workspace?.classList.add('on');
   document.getElementById('vMenu')?.classList.remove('journey-active');
   updateMenuProfileCard();
   renderWeek();
@@ -6203,7 +6347,10 @@ function continueMenuJourney() {
   const selected = document.querySelector('#menuDietGridV4 .menu-diet-choice-v4.on');
   if(selected) selectMenuJourneyDiet(selected);
   showCurrentMenuWorkspace();
-  setTimeout(() => document.getElementById('menuGenBtn')?.scrollIntoView({behavior:'smooth',block:'center'}), 120);
+  // « Suivant » valide un nouveau parcours : la semaine doit donc être
+  // reconstruite immédiatement avec ce régime. Le lien d'évitement ci-dessus
+  // reste le seul moyen d'ouvrir l'ancienne semaine sans la remplacer.
+  setTimeout(() => generateAIMenuFull(), 180);
 }
 
 // ── Sous-onglets de "Mes Recettes": Favoris / Toutes les recettes ──
@@ -6491,16 +6638,43 @@ async function _queryRecipesForGeneration(settings, diet) {
 // Vérifie si une recette respecte les filtres cuisine + diète + allergènes
 function _recipeMatchesFilters(r, settings, diet) {
   if(!r || !r.id) return false;
-  const eh = r.eatingHabits || {};
   if(settings.cuisine && r.origin !== settings.cuisine) return false;
-  if(diet === 'veg'    && !eh.vegetarian)  return false;
-  if(diet === 'vegan'  && !eh.vegan)       return false;
-  if(diet === 'pesc'   && !eh.pescatarian) return false;
-  if(diet === 'gluten' && !eh.glutenFree)  return false;
-  if(diet === 'halal'  && !eh.porkless)    return false;
-  if(diet === 'keto' && !(eh.lowCarb || (Number(r.carb) > 0 && Number(r.carb) <= 20))) return false;
+  if(!_recipeMatchesDiet(r, diet)) return false;
   if((settings.selectedAllergens||[]).some(a => _recipeHasAllergen(r, a))) return false;
   return true;
+}
+
+function _recipeMatchesDiet(r, diet) {
+  if(!diet || diet === 'omnivore') return true;
+  const eh = r.eatingHabits || {};
+  const declared = String(r.diet || '').toLowerCase();
+  const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const hay = normalize((r.name || '') + ' ' + (r.ingredients || []).map(i => typeof i === 'string' ? i : (i.name || '')).join(' '));
+  const hasAny = words => words.some(word => hay.includes(word));
+  const pork = hasAny(['porc','jambon','lardon','bacon','prosciutto','chorizo','saucisse de porc','pancetta','coppa','mortadelle']);
+
+  if(diet === 'veg') {
+    return declared === 'veg' || declared === 'vegan' || eh.vegetarian === true || eh.vegan === true;
+  }
+  if(diet === 'vegan') {
+    return declared === 'vegan' || eh.vegan === true;
+  }
+  if(diet === 'pesc') {
+    return ['pesc','veg','vegan'].includes(declared) || eh.pescatarian === true || eh.vegetarian === true || eh.vegan === true;
+  }
+  if(diet === 'gluten') {
+    return declared === 'gluten' || eh.glutenFree === true;
+  }
+  // Dans l'interface ce choix est libellé « Sans porc » : on rejette donc
+  // systématiquement toute recette dont le nom ou les ingrédients en contiennent,
+  // même lorsque le fournisseur a oublié le drapeau porkless.
+  if(diet === 'halal') {
+    return !pork;
+  }
+  if(diet === 'keto') {
+    return eh.lowCarb === true || declared === 'keto' || (Number(r.carb) > 0 && Number(r.carb) <= 20);
+  }
+  return false;
 }
 
 function _rankRecipesForProfile(pool, profile, dailyCalories, macroTargets, settings) {
@@ -6617,6 +6791,14 @@ async function generateAIMenuFull() {
     const lunchSeq  = shuffled.slice(0, n);
     const dinnerSeq = shuffled.slice(n, MIN_POOL);
 
+    // Dernière barrière avant l'enregistrement : aucune recette incompatible
+    // ne doit atteindre le planning, même si une source distante a renvoyé des
+    // métadonnées alimentaires incomplètes ou incohérentes.
+    const incompatible = [...lunchSeq, ...dinnerSeq].filter(recipe => recipe && !_recipeMatchesDiet(recipe, diet));
+    if(incompatible.length) {
+      throw new Error('Certaines recettes ne respectent pas le régime sélectionné. Relancez la génération.');
+    }
+
     const dayMenus = [];
     let weekCost = 0;
     for(let i = 0; i < n; i++) {
@@ -6641,7 +6823,7 @@ async function generateAIMenuFull() {
       });
     }
 
-    applyAIMenuResult({ days: dayMenus, startDay: todayDayNum, summary: 'D\u00e9jeuner & d\u00eener planifi\u00e9s' });
+    applyAIMenuResult({ days: dayMenus, startDay: todayDayNum, diet, summary: 'D\u00e9jeuner & d\u00eener planifi\u00e9s selon votre r\u00e9gime' });
     window.MealioNotifications?.emit('menu_planned', {count:n * 2}, 'menu_planned_' + new Date().toISOString().slice(0,10) + '_' + n);
 
     let toastMsg = n + ' jour' + (n>1?'s':'') + ' planifi\u00e9s';
@@ -6891,6 +7073,7 @@ function _jowNormalize(r) {
     pricePerPortionEuro: r.pricePerPortionEuro || 0,
     priceLevel:     r.priceLevel || 0,
     priceLabel:     r.priceLabel || '',
+    diet:           r.diet || null,
     nutriScore:     ns,
     greenScore:     gs,
     scoreProvider:  r.scoreProvider || null,
@@ -8693,6 +8876,31 @@ function renderWeek() {
       + '<div class="dc-ml">' + lShort + '</div>'
       + '</div>';
   }).join('');
+  const overview = document.getElementById('weekOverviewV4');
+  if(overview) {
+    const esc = value => typeof escapeHtml === 'function' ? escapeHtml(String(value || '')) : String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    overview.innerHTML = DAYS.map((dayLabel, index) => {
+      const day = index + 1;
+      const current = state.weekMenu[day] || {};
+      const mealData = current.lData || current.dData || current.bData || null;
+      const rawName = current.l || current.d || current.b || '';
+      const mealName = rawName.replace(/^[^\p{L}\p{N}]+/u, '').trim();
+      const photo = mealData?.photo || '';
+      const kcal = mealData?.kcal || current.nutri?.kcal || 0;
+      const time = mealData?.time || '';
+      const isToday = day === todayNum;
+      return `<article class="week-overview-row-v4${isToday?' today':''}" onclick="selectDay(${day});document.getElementById('dayDetail')?.scrollIntoView({behavior:'smooth',block:'start'})">
+        <div class="week-overview-day-v4"><span>${esc(dayLabel)}</span><strong>${day}</strong></div>
+        ${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : `<div class="week-overview-placeholder-v4">${rawName ? '🍽️' : '+'}</div>`}
+        <div class="week-overview-copy-v4">
+          <strong>${esc(mealName || 'Ajouter un repas')}</strong>
+          <span>${time ? esc(time)+' min' : ''}${time && kcal ? ' · ' : ''}${kcal ? esc(kcal)+' kcal' : ''}</span>
+        </div>
+        <button type="button" onclick="event.stopPropagation();openMealEdit(${day},'l')" aria-label="Modifier le repas"><i data-lucide="ellipsis-vertical"></i></button>
+      </article>`;
+    }).join('');
+    refreshMealioIcons();
+  }
   renderDayDetail();
 }
 
@@ -9032,6 +9240,7 @@ function _previewMealSlot(day, slot) {
 
 function applyAIMenuResult(data) {
   if(!data.days) return;
+  if(data.diet) state.weekMenuDiet = data.diet;
   const startDay = data.startDay || 1;
   data.days.forEach((d,i) => {
     const dn = startDay + i;
@@ -10692,6 +10901,7 @@ function toggleMenuDiet(el) {
   state.selectedDiet = [val];
   state.profile = {...(state.profile||{}), diet:val};
   saveState();
+  if(typeof syncToFirestore === 'function') syncToFirestore('profile', state.profile).catch(()=>{});
   updateMenuProfileCard();
 }
 
