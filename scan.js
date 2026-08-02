@@ -813,8 +813,12 @@ async function saveTicketHistory(data) {
 // ═══════════════════════════════════════════════
 function showProfile() {
   fillProfileForm();
+  const dietLabels = {omnivore:'Aucun régime particulier',veg:'Végétarien',vegan:'Vegan',pesc:'Pescétarien',gluten:'Sans gluten',keto:'Keto',halal:'Sans porc'};
+  const dietSummary = document.getElementById('profileDietSummaryV5');
+  if(dietSummary) dietSummary.textContent = dietLabels[state.profile?.diet] || dietLabels.omnivore;
   const overlay = document.getElementById('profileOverlay');
   overlay.classList.add('on');
+  if(typeof refreshMealioIcons === 'function') refreshMealioIcons();
   // Swipe-down to close — only when modal is already scrolled to top
   const modal = document.getElementById('profileModalInner');
   if(!modal) return;
