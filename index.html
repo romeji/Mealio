@@ -2688,7 +2688,7 @@ html[data-theme=light] #app .vwrap{
   color:var(--v4-ink)!important;
   box-shadow:none!important;
 }
-.mealio-fridge-v4 .fridge-hero>div:nth-child(-n+2){display:none!important;}
+.mealio-fridge-v4 .fridge-hero>div:nth-child(-n+2){display:block;}
 .mealio-fridge-v4 .fridge-hero>.mealio-page-kicker,
 html[data-theme=light] .mealio-fridge-v4 .fridge-hero>.mealio-page-kicker{margin-bottom:8px!important;color:var(--v4-coral)!important;font-size:.65rem!important;letter-spacing:1.4px!important;}
 .mealio-fridge-v4 .fridge-hero>div:nth-of-type(4){color:var(--v4-ink)!important;font-size:1.8rem!important;line-height:1!important;letter-spacing:-1px;}
@@ -2723,7 +2723,6 @@ html[data-theme=light] .mealio-fridge-v4 .fridge-hero>.mealio-page-kicker{margin
 .mealio-fridge-v4 .rc-img-wrap{top:-54px!important;filter:drop-shadow(7px 8px 0 rgba(30,30,30,.2));}
 
 /* Menu — parcours épuré validé */
-#vMenu.journey-active #menuVb>div:first-child,
 #vMenu.journey-active #menuTabBar{display:none!important;}
 #vMenu.journey-active #menuVb{padding-top:14px!important;}
 .menu-journey-v4{
@@ -3123,10 +3122,10 @@ html:not([data-theme=light]) .nutrition-advice-v5 span,html:not([data-theme=ligh
 html[data-theme] .recipe-heart.on,html[data-theme] .recipe-unified-card>button[aria-label*="Retirer"]{color:#f6c945!important}
 html[data-theme=light] .tb-logo-tx{display:block!important;max-width:none!important;padding:4px 5px!important;margin:-4px -5px!important;overflow:visible!important;line-height:1.2!important;white-space:nowrap!important}
 html[data-theme=light] .tb-logo-tx span{display:inline-block!important;padding-right:5px!important;margin-right:-5px!important;overflow:visible!important}
-@media(max-width:767px){html[data-theme=light] #vFrigo>.vb,html[data-theme=light] #vMenu>.vb{padding-top:14px!important;scroll-padding-top:14px!important}}
-.mealio-fridge-v5 .fridge-hero>.fridge-title-v5{display:flex!important}
-.mealio-fridge-v5 .fridge-hero>.fridge-stats-v5{display:grid!important}
-#menuVb>.menu-title-v5{position:sticky!important;z-index:30!important;top:0!important;margin:0 -2px 4px!important;padding:8px 2px 6px!important;background:var(--bg)!important}
+@media(max-width:767px){html[data-theme=light] #vFrigo>.vb,html[data-theme=light] #vMenu>.vb{padding-top:34px!important;scroll-padding-top:34px!important}}
+#vFrigo .mealio-fridge-v5 .fridge-hero>.fridge-title-v5{display:flex!important}
+#vFrigo .mealio-fridge-v5 .fridge-hero>.fridge-stats-v5{display:grid!important}
+#vMenu #menuVb>.menu-title-v5,#vMenu.journey-active #menuVb>.menu-title-v5{display:flex!important;position:sticky!important;z-index:30!important;top:0!important;margin:0 -2px 4px!important;padding:8px 2px 6px!important;background:var(--bg)!important}
 /* Scan et frigo : toutes les variantes de thème réutilisent les mêmes tokens. */
 html:not([data-theme=light]) .mealio-scan-v4>.list-subtabs,html:not([data-theme=light]) .mealio-scan-v4 .card,html:not([data-theme=light]) .mealio-scan-v4 .scan-c,html:not([data-theme=light]) .mealio-scan-v4 .scan-purpose-v6{color:var(--tx)!important;background:var(--bg2)!important;border-color:color-mix(in srgb,var(--tx) 12%,transparent)!important}
 html:not([data-theme=light]) .mealio-scan-v4>.list-subtabs .list-subtab{color:var(--tx2)!important}
@@ -5461,6 +5460,19 @@ applyTabletLayout();
 
 function switchTab(tab) {
   if(tab === 'accueil') ensureHomeSections();
+  // Un onglet principal doit toujours s'ouvrir depuis son vrai début. On
+  // réinitialise le conteneur avant même de le rendre visible afin que Safari
+  // ne réutilise pas la position conservée lors de la visite précédente.
+  if(tab === 'frigo' || tab === 'menu') {
+    const targetView = document.getElementById('v' + tab.charAt(0).toUpperCase() + tab.slice(1));
+    const targetScroller = targetView?.querySelector('.vb');
+    if(targetScroller) {
+      targetScroller.dataset.forceTopUntil = String(Date.now() + 10000);
+      targetScroller.scrollTop = 0;
+      targetScroller.scrollLeft = 0;
+    }
+    if(tab === 'menu') targetView?.classList.remove('journey-active');
+  }
   _doSwitchTab(tab);
   if(tab === 'frigo') {
     loadRecipes().then(() => {
