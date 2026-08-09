@@ -11,7 +11,7 @@ firebase.initializeApp({
 });
 firebase.messaging();
 
-const CACHE = 'mealio-shell-v29';
+const CACHE = 'mealio-shell-v30';
 const APP_SHELL = [
   './',
   './index.html',

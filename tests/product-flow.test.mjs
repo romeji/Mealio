@@ -47,4 +47,8 @@ test('les garde-fous UX empêchent le retour des régressions bloquantes', () =>
   assert.match(html, /id="profileBackBarV6"/);
   assert.match(html, /#vFrigo \.rc-img-wrap\{position:static!important/);
   assert.match(html, /\.recipe-unified-card>img\{position:static!important/);
+  assert.match(html, /#menuPanelWeek #weekScroll>\.dc\.sel\{background:var\(--grad\)!important/);
+  assert.match(html, /html\[data-theme\] \.mealio-home-v5 \.daily-card\{[^}]*flex:0 0 132px!important/);
+  assert.match(html, /html\[data-theme\] #jowResults \.recipe-unified-card[^\{]*\{[^}]*padding:0!important/);
+  assert.equal((html.match(/class="recipe-unified-body"/g) || []).length, 3);
 });
