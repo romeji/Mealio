@@ -306,23 +306,19 @@
     if(!targetId) return;
     document.getElementById('profileModalInner')?.classList.add('profile-detail-open-v6');
     document.querySelectorAll('.profile-detail-v6').forEach(element => element.classList.toggle('active', element.id === targetId || element.id === 'profileSaveV6' || (section === 'appearance' && element.id === 'profileThemePickerV6')));
-    const target = document.getElementById(targetId);
-    if(target && !document.getElementById('profileDetailBackV6')) {
-      const back = document.createElement('button');
-      back.id='profileDetailBackV6'; back.type='button'; back.className='profile-back-v6';
-      back.innerHTML='<i data-lucide="arrow-left"></i><span>Paramètres</span>';
-      back.onclick=closeProfileSection;
-      target.insertAdjacentElement('beforebegin',back);
-    }
-    document.getElementById('profileModalInner')?.scrollTo({top:0,behavior:'smooth'});
+    const labels={budget:'Budget & prix',appearance:'Apparence',personal:'Informations personnelles',food:'Régime & objectifs'};
+    const label=document.getElementById('profileBackLabelV6');
+    if(label) label.textContent='Retour aux paramètres · '+labels[section];
+    const modal=document.getElementById('profileModalInner');
+    if(modal) modal.scrollTop=0;
     window.lucide?.createIcons?.({attrs:{'aria-hidden':'true','stroke-width':2}});
   }
 
   function closeProfileSection() {
     document.getElementById('profileModalInner')?.classList.remove('profile-detail-open-v6');
-    document.getElementById('profileDetailBackV6')?.remove();
     document.querySelectorAll('.profile-detail-v6').forEach(element => element.classList.remove('active'));
-    document.getElementById('profileModalInner')?.scrollTo({top:0,behavior:'smooth'});
+    const modal=document.getElementById('profileModalInner');
+    if(modal) modal.scrollTop=0;
   }
 
   function openChoiceSettings(kind, choices) {

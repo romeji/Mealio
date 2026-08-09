@@ -39,3 +39,12 @@ test('la conservation estimée est plus courte pour le poisson que pour l’épi
   assert.ok(fish > addedAt);
   assert.ok(rice > fish);
 });
+
+test('les garde-fous UX empêchent le retour des régressions bloquantes', () => {
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.doesNotMatch(html, /#menuPanelWeek>\.menu-week-workspace-v4>\.card\.mb14\{display:none!important\}/);
+  assert.match(html, /#menuPanelWeek>\.menu-week-workspace-v4>#menuPlannerCardV6\.open\{display:flex!important\}/);
+  assert.match(html, /id="profileBackBarV6"/);
+  assert.match(html, /#vFrigo \.rc-img-wrap\{position:static!important/);
+  assert.match(html, /\.recipe-unified-card>img\{position:static!important/);
+});
