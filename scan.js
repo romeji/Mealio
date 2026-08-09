@@ -738,7 +738,7 @@ function confirmTicketToList() {
       state.items.unshift({
         id: 'i'+Date.now()+Math.random().toString(36).slice(2,7),
         name: it.name, emoji: it.emoji||'🛒', cat: it.cat||'🍝 Épicerie',
-        price: it.price||0, qty: '', checked: false, addedAt: Date.now(),
+        price: it.price||0, qty: '', checked: false, status:'needed', source:'receipt', addedAt: Date.now(),
         addedBy: currentUser ? currentUser.email : ''
       });
     }
@@ -771,7 +771,7 @@ function addTicketToFridgeItems(items) {
       window.MealioQuality?.foodMatches(f.name, it.name) || f.name.toLowerCase() === it.name.toLowerCase()
     );
     if(ex) { ex.qty = (parseInt(ex.qty)||1) + 1; }
-    else { state.fridge.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5), name:it.name, emoji:it.emoji||'🛒', qty:1, cat:it.cat||'🍝 Épicerie'}); }
+    else { state.fridge.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5), name:it.name, emoji:it.emoji||'🛒', qty:1, cat:it.cat||'🍝 Épicerie',addedAt:Date.now(),source:'receipt'}); }
   });
   saveFridge();
   window.MealioNotifications?.emit('fridge_updated', {count:items.length}, 'fridge_updated_ticket_' + Date.now());
@@ -1202,6 +1202,8 @@ function _addSelectedFridgeItems(aliments) {
         emoji: a.emoji || '🥗',
         qty: a.quantite || 1,
         cat: a.categorie || '🥦 Légumes',
+        addedAt: Date.now(),
+        source: 'camera',
       });
       added++;
     }
@@ -1443,7 +1445,7 @@ function addBarcodeToList(product) {
     name: matched ? matched.name : product.name,
     emoji: matched ? matched.emoji : guessEmoji(product.name),
     cat: matched ? matched.cat : '🍝 Épicerie',
-    price: 0, qty:'', checked:false, addedAt:Date.now(),
+    price: 0, qty:'', checked:false, status:'needed', source:'barcode', addedAt:Date.now(),
     addedBy: currentUser ? currentUser.email : '',
     nutriscore: product.nutriscore, brand: product.brand, barcode: product.barcode
   });
@@ -1456,7 +1458,7 @@ function addBarcodeToFridge(product) {
   const name = matched ? matched.name : product.name;
   const ex = state.fridge.find(f => f.name.toLowerCase() === name.toLowerCase());
   if(ex) { ex.qty = (parseInt(ex.qty)||1)+1; }
-  else { state.fridge.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5),name,emoji:matched?matched.emoji:guessEmoji(product.name),qty:1,cat:matched?matched.cat:'🍝 Épicerie',nutriscore:product.nutriscore}); }
+  else { state.fridge.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5),name,emoji:matched?matched.emoji:guessEmoji(product.name),qty:1,cat:matched?matched.cat:'🍝 Épicerie',nutriscore:product.nutriscore,addedAt:Date.now(),source:'barcode'}); }
   saveFridge(); renderFridge();
   showToast('🧊', name, 'Ajouté au frigo');
 }

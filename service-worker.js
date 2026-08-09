@@ -11,7 +11,7 @@ firebase.initializeApp({
 });
 firebase.messaging();
 
-const CACHE = 'mealio-shell-v27';
+const CACHE = 'mealio-shell-v28';
 const APP_SHELL = [
   './',
   './index.html',
@@ -19,6 +19,7 @@ const APP_SHELL = [
   './recipe-store.js',
   './api-client.js',
   './daily-recipes.js',
+  './mealio-product.js',
   './liste.js',
   './scan.js',
   './notifications.js',

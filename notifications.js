@@ -191,8 +191,15 @@
   function openSettings() {
     const list = document.getElementById('notificationList');
     if (!list) return;
+    const permission = typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
+    const statusCopy = permission === 'granted'
+      ? ['Appareil connecté','Les notifications système sont autorisées sur cet appareil.','✅']
+      : permission === 'denied'
+        ? ['Notifications bloquées','Autorisez-les dans les réglages du navigateur ou de la PWA.','⚠️']
+        : ['Appareil à connecter','Activez les notifications pour recevoir les nouvelles du foyer.','📱'];
     document.getElementById('notificationTitle').textContent = '⚙️ Préférences';
     list.innerHTML = '<div class="notif-settings">'
+      + '<div style="display:flex;gap:10px;align-items:center;padding:12px;margin-bottom:12px;border-radius:14px;background:var(--bg2)"><span style="font-size:1.25rem">' + statusCopy[2] + '</span><span><strong style="display:block;font-size:.75rem">' + statusCopy[0] + '</strong><small style="display:block;margin-top:2px;color:var(--tx2);font-size:.62rem;line-height:1.35">' + statusCopy[1] + '</small></span></div>'
       + '<button class="btn acc" style="width:100%;margin-bottom:12px" onclick="MealioNotifications.enablePush()">🔔 Activer les notifications mobiles</button>'
       + settingsRow('push', 'Notifications mobiles', 'Même lorsque Mealio est fermé')
       + settingsRow('inApp', 'Centre de notifications', 'Conserver les événements dans l’application')

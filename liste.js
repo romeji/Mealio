@@ -112,7 +112,11 @@ function toggleCheck(id) {
   if(!item) return;
   const shoppingWasIdle = !state.items.some(i => i.checked);
   item.checked = !item.checked;
+  item.status = item.checked ? 'cart' : 'needed';
   item.checkedAt = item.checked ? Date.now() : null;
+  if(item.checked && shoppingWasIdle) {
+    state.shoppingSession = {active:true, startedAt:Date.now()};
+  }
   saveItems();
   renderList();
   if(state.currentSubtab === 'cart') renderCart();
@@ -147,7 +151,7 @@ function addItemFromInput() {
     emoji: prod ? prod.emoji : '🛒',
     cat: prod ? prod.cat : '🍝 Épicerie',
     price: prod ? prod.price : 0,
-    qty: '', checked: false, addedAt: Date.now(),
+    qty: '', checked: false, status:'needed', source:'manual', addedAt: Date.now(),
     addedBy: currentUser ? (currentUser.displayName || currentUser.email) : 'Inconnu'
   };
   state.items.unshift(item);
@@ -163,7 +167,7 @@ function addItemByName(name) {
   const prod = PRODUCTS.find(p => p.name.toLowerCase() === name.toLowerCase()) || {name, emoji:'🛒', cat:'🍝 Épicerie', price:0};
   const ex = state.items.find(i => i.name.toLowerCase() === name.toLowerCase() && !i.checked);
   if(ex) { ex.qty = String((parseInt(ex.qty)||1) + 1); saveItems(); renderList(); showToast('🔄', name, 'Quantité +1'); return; }
-  const item = {id:'i'+Date.now()+Math.random().toString(36).slice(2,7),name:prod.name,emoji:prod.emoji,cat:prod.cat,price:prod.price,qty:'',checked:false,addedAt:Date.now(),addedBy:currentUser?currentUser.email:''};
+  const item = {id:'i'+Date.now()+Math.random().toString(36).slice(2,7),name:prod.name,emoji:prod.emoji,cat:prod.cat,price:prod.price,qty:'',checked:false,status:'needed',source:'manual',addedAt:Date.now(),addedBy:currentUser?currentUser.email:''};
   state.items.unshift(item);
   saveItems(); renderList();
   window.MealioNotifications?.emit('item_added', {itemName:item.name}, 'item_added_' + item.id);
@@ -220,7 +224,7 @@ function renderCart() {
   const total = checked.reduce((s,i) => s+(i.price||0), 0).toFixed(2);
   if(banner) banner.innerHTML = `
     <div class="cart-banner">
-      <div><div class="cart-banner-tx">${checked.length} article(s) dans le chariot</div><div class="cart-banner-sub">Total estimé : ${total}€</div></div>
+      <div><div class="cart-banner-tx">${checked.length} article(s) dans le chariot</div><div class="cart-banner-sub">Les produits cochés sont considérés comme pris · Total estimé : ${total}€</div></div>
       <div class="finish-btn" onclick="finishShopping()">✅ Terminer</div>
     </div>`;
   if(wrap) wrap.innerHTML = checked.map(item => `
@@ -242,27 +246,44 @@ function renderCart() {
 function finishShopping() {
   const checked = state.items.filter(i => i.checked);
   if(!checked.length) return;
-  confirm2('🎉', 'Courses terminées !', `Ajouter ${checked.length} article(s) au frigo et à l'historique ?`, () => {
+  if(window.MealioProduct?.showShoppingCompletion) {
+    window.MealioProduct.showShoppingCompletion(checked);
+    return;
+  }
+  completeShopping(true);
+}
+
+function completeShopping(addToFridge = true) {
+  const checked = state.items.filter(i => i.checked);
+  if(!checked.length) return;
     const session = {
       date: new Date().toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'2-digit'}),
       timestamp: Date.now(),
-      items: checked.map(i => ({name:i.name,emoji:i.emoji,price:i.price||0})),
+      startedAt: state.shoppingSession?.startedAt || null,
+      addedToFridge: addToFridge,
+      items: checked.map(i => ({name:i.name,emoji:i.emoji,price:i.price||0,qty:i.qty||'',source:i.source||'manual'})),
       total: checked.reduce((s,i) => s+(i.price||0), 0).toFixed(2)
     };
     state.history.unshift(session);
     if(state.history.length > 20) state.history.pop();
-    checked.forEach(item => {
+    if(addToFridge) checked.forEach(item => {
       const ex = state.fridge.find(f => f.name.toLowerCase() === item.name.toLowerCase());
-      if(ex) { ex.qty = (parseInt(ex.qty)||1) + 1; }
-      else { state.fridge.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5),name:item.name,emoji:item.emoji||'🛒',qty:1,cat:item.cat}); }
+      if(ex) {
+        ex.qty = (parseInt(ex.qty)||1) + 1;
+        ex.addedAt = Date.now();
+        ex.source = 'shopping';
+      } else {
+        state.fridge.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5),name:item.name,emoji:item.emoji||'🛒',qty:1,cat:item.cat,addedAt:Date.now(),source:'shopping'});
+      }
     });
     state.items = state.items.filter(i => !i.checked);
+    state.shoppingSession = {active:false, startedAt:null};
     saveItems(); saveFridge(); saveHistory();
-    window.MealioNotifications?.emit('shopping_completed', {count:checked.length}, 'shopping_completed_' + session.timestamp);
+    window.MealioNotifications?.emit('shopping_completed', {count:checked.length,fridgeCount:addToFridge?checked.length:0}, 'shopping_completed_' + session.timestamp);
     renderList(); renderFridge(); renderCart(); renderHistory();
-    showToast('🎉', 'Course terminée !', 'Articles ajoutés au frigo et à l\'historique.');
+    window.MealioProduct?.closeSheet?.();
+    showToast('🎉', 'Courses terminées !', addToFridge ? 'Articles ajoutés au frigo et à l’historique.' : 'Session enregistrée dans l’historique.');
     switchSubtab('done');
-  });
 }
 
 // ═══════════════════════════════════════════════
@@ -304,7 +325,7 @@ function reorderFromHistory(i) {
   const s = state.history[i]; let added = 0;
   s.items.forEach(it => {
     if(!state.items.some(si => si.name.toLowerCase() === it.name.toLowerCase() && !si.checked)) {
-      state.items.unshift({id:'i'+Date.now()+Math.random().toString(36).slice(2,7),name:it.name,emoji:it.emoji,cat:'🍝 Épicerie',price:it.price||0,qty:'',checked:false,addedAt:Date.now()});
+      state.items.unshift({id:'i'+Date.now()+Math.random().toString(36).slice(2,7),name:it.name,emoji:it.emoji,cat:'🍝 Épicerie',price:it.price||0,qty:it.qty||'',checked:false,status:'needed',source:'history',addedAt:Date.now()});
       added++;
     }
   });

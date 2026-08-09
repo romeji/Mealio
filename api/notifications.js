@@ -39,7 +39,11 @@ const EVENT_TEMPLATES = {
   },
   shopping_completed: {
     category: 'shopping', icon: '✅', title: 'Courses terminées',
-    body: '{actor} a rangé {count} article(s) dans le frigo.', action: 'history'
+    body: '{actor} a terminé une session de {count} article(s).', action: 'history'
+  },
+  shopping_batch_added: {
+    category: 'shopping', icon: '🧺', title: 'Liste préparée depuis le menu',
+    body: '{actor} a ajouté {count} ingrédient(s) manquant(s).', action: 'list'
   },
   fridge_updated: {
     category: 'fridge', icon: '🥬', title: 'Frigo mis à jour',
@@ -60,6 +64,18 @@ const EVENT_TEMPLATES = {
   recipe_planned: {
     category: 'meals', icon: '👨‍🍳', title: 'Nouveau repas planifié',
     body: '{actor} a prévu « {recipeName} ».', action: 'menu'
+  },
+  recipe_cooked: {
+    category: 'meals', icon: '👨‍🍳', title: 'Recette cuisinée',
+    body: '{actor} a cuisiné « {recipeName} » et mis le frigo à jour.', action: 'fridge'
+  },
+  meal_replaced: {
+    category: 'meals', icon: '🔄', title: 'Menu modifié',
+    body: '{actor} a remplacé un repas par « {recipeName} ».', action: 'menu'
+  },
+  fridge_expiring: {
+    category: 'fridge', icon: '⏳', title: 'Produits à consommer bientôt',
+    body: '{count} produit(s) du foyer arrivent bientôt à échéance.', action: 'fridge'
   },
   household_joined: {
     category: 'household', icon: '👋', title: 'Nouveau membre dans le foyer',
