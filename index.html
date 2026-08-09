@@ -5501,23 +5501,14 @@ function forceViewTop(vb, holdMs = 10000) {
   if(!vb) return;
   vb.dataset.forceTopUntil = String(Date.now() + holdMs);
   vb.style.scrollBehavior = 'auto';
-  vb.scrollTop = 0;
-  vb.scrollLeft = 0;
-  const firstContent = vb.firstElementChild;
-  if(firstContent && typeof firstContent.scrollIntoView === 'function') {
-    firstContent.scrollIntoView({block:'start',inline:'nearest',behavior:'auto'});
-    vb.scrollTop = 0;
-    vb.scrollLeft = 0;
-  }
-  if(typeof vb.scrollTo === 'function') vb.scrollTo({top:0,left:0,behavior:'auto'});
   const view = vb.closest('.view');
   const wrap = vb.closest('.vwrap');
-  if(view) { view.scrollTop = 0; view.scrollLeft = 0; }
-  if(wrap) { wrap.scrollTop = 0; wrap.scrollLeft = 0; }
-  if(document.scrollingElement) {
-    document.scrollingElement.scrollTop = 0;
-    document.scrollingElement.scrollLeft = 0;
-  }
+  [vb, view, wrap, document.scrollingElement, document.documentElement, document.body].forEach(scroller => {
+    if(!scroller) return;
+    scroller.scrollTop = 0;
+    scroller.scrollLeft = 0;
+    if(typeof scroller.scrollTo === 'function') scroller.scrollTo(0, 0);
+  });
   window.scrollTo(0, 0);
 }
 
@@ -5528,8 +5519,7 @@ function armViewTopGuard(vb) {
   let released = false;
   const keepAtTop = () => {
     if(released) return;
-    vb.scrollTop = 0;
-    vb.scrollLeft = 0;
+    forceViewTop(vb);
   };
   const release = () => {
     if(released) return;
@@ -5569,7 +5559,14 @@ function _doSwitchTab(tab) {
     document.activeElement.blur();
   }
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  document.querySelectorAll('.view').forEach(v => {
+    // Les deux vues longues ne conservent jamais leur position entre deux
+    // passages par la navigation principale.
+    if((v.id === 'vFrigo' || v.id === 'vMenu') && v.classList.contains('on')) {
+      forceViewTop(v.querySelector('.vb'), 0);
+    }
+    v.classList.remove('on');
+  });
   const tabEl = document.getElementById('tab-' + tab);
   if(tabEl) tabEl.classList.add('on');
   const viewId = 'v' + tab.charAt(0).toUpperCase() + tab.slice(1);
