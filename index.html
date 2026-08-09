@@ -3120,7 +3120,9 @@ html:not([data-theme=light]) .settings-v5>button,html:not([data-theme=light]) #m
 html:not([data-theme=light]) .nutrition-ring-v5:after,html:not([data-theme=light]) .nutrition-rings-v5 i:after{background:var(--bg2)!important}
 html:not([data-theme=light]) .nutrition-advice-v5{color:var(--tx)!important;background:color-mix(in srgb,var(--gn) 12%,var(--bg2))!important;border-color:color-mix(in srgb,var(--gn) 28%,var(--bg2))!important}
 html:not([data-theme=light]) .nutrition-advice-v5 span,html:not([data-theme=light]) .settings-v5 small,html:not([data-theme=light]) .home-ready-v5 small,html:not([data-theme=light]) .fridge-stats-v5 span{color:var(--tx2)!important}
-html[data-theme] .recipe-heart.on,html[data-theme] .recipe-unified-card>button[aria-label*="Retirer"]{color:#ff6b6b!important}
+html[data-theme] .recipe-heart.on,html[data-theme] .recipe-unified-card>button[aria-label*="Retirer"]{color:#f6c945!important}
+html[data-theme=light] .tb-logo-tx{display:block!important;max-width:none!important;padding:4px 5px!important;margin:-4px -5px!important;overflow:visible!important;line-height:1.2!important;white-space:nowrap!important}
+@media(max-width:767px){html[data-theme=light] #vFrigo>.vb,html[data-theme=light] #vMenu>.vb{padding-top:14px!important;scroll-padding-top:14px!important}}
 /* Scan et frigo : toutes les variantes de thème réutilisent les mêmes tokens. */
 html:not([data-theme=light]) .mealio-scan-v4>.list-subtabs,html:not([data-theme=light]) .mealio-scan-v4 .card,html:not([data-theme=light]) .mealio-scan-v4 .scan-c,html:not([data-theme=light]) .mealio-scan-v4 .scan-purpose-v6{color:var(--tx)!important;background:var(--bg2)!important;border-color:color-mix(in srgb,var(--tx) 12%,transparent)!important}
 html:not([data-theme=light]) .mealio-scan-v4>.list-subtabs .list-subtab{color:var(--tx2)!important}
@@ -5479,12 +5481,18 @@ function switchTab(tab) {
   }
 }
 
-function forceViewTop(vb, holdMs = 1400) {
+function forceViewTop(vb, holdMs = 10000) {
   if(!vb) return;
   vb.dataset.forceTopUntil = String(Date.now() + holdMs);
   vb.style.scrollBehavior = 'auto';
   vb.scrollTop = 0;
   vb.scrollLeft = 0;
+  const firstContent = vb.firstElementChild;
+  if(firstContent && typeof firstContent.scrollIntoView === 'function') {
+    firstContent.scrollIntoView({block:'start',inline:'nearest',behavior:'auto'});
+    vb.scrollTop = 0;
+    vb.scrollLeft = 0;
+  }
   if(typeof vb.scrollTo === 'function') vb.scrollTo({top:0,left:0,behavior:'auto'});
   const view = vb.closest('.view');
   const wrap = vb.closest('.vwrap');
@@ -5520,6 +5528,7 @@ function armViewTopGuard(vb) {
     vb.removeEventListener('wheel', release);
     vb.removeEventListener('keydown', release);
     vb.removeEventListener('scroll', keepAtTop);
+    vb.dataset.forceTopUntil = '0';
     vb._mealioTopGuardCleanup = null;
   };
 
@@ -6104,7 +6113,7 @@ onclick="${onclickFn}"
 
 ${img}
 
-<button type="button" class="recipe-heart ${isBookmarked?'on':''}" onclick="event.stopPropagation();toggleBookmark('${r.id}');this.classList.toggle('on')" aria-label="Ajouter aux favoris">♡</button>
+<button type="button" class="recipe-heart ${isBookmarked?'on':''}" onclick="event.stopPropagation();toggleBookmark('${r.id}');this.classList.toggle('on')" aria-label="Ajouter aux favoris">${isBookmarked?'⭐':'☆'}</button>
 
 <div class="rc-bd">
 
