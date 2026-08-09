@@ -3121,6 +3121,17 @@ html:not([data-theme=light]) .nutrition-ring-v5:after,html:not([data-theme=light
 html:not([data-theme=light]) .nutrition-advice-v5{color:var(--tx)!important;background:color-mix(in srgb,var(--gn) 12%,var(--bg2))!important;border-color:color-mix(in srgb,var(--gn) 28%,var(--bg2))!important}
 html:not([data-theme=light]) .nutrition-advice-v5 span,html:not([data-theme=light]) .settings-v5 small,html:not([data-theme=light]) .home-ready-v5 small,html:not([data-theme=light]) .fridge-stats-v5 span{color:var(--tx2)!important}
 html[data-theme] .recipe-heart.on,html[data-theme] .recipe-unified-card>button[aria-label*="Retirer"]{color:#ff6b6b!important}
+/* Scan et frigo : toutes les variantes de thème réutilisent les mêmes tokens. */
+html:not([data-theme=light]) .mealio-scan-v4>.list-subtabs,html:not([data-theme=light]) .mealio-scan-v4 .card,html:not([data-theme=light]) .mealio-scan-v4 .scan-c,html:not([data-theme=light]) .mealio-scan-v4 .scan-purpose-v6{color:var(--tx)!important;background:var(--bg2)!important;border-color:color-mix(in srgb,var(--tx) 12%,transparent)!important}
+html:not([data-theme=light]) .mealio-scan-v4>.list-subtabs .list-subtab{color:var(--tx2)!important}
+html:not([data-theme=light]) .mealio-scan-v4>.list-subtabs .list-subtab.on{color:#fff!important;background:var(--grad)!important}
+html:not([data-theme=light]) .mealio-scan-v4 .scan-c-ti,html:not([data-theme=light]) .mealio-scan-v4 .scan-c-su{color:var(--tx)!important}
+html:not([data-theme=light]) .mealio-scan-v4 .scan-c-su,html:not([data-theme=light]) .mealio-scan-v4 .scan-purpose-v6 span{color:var(--tx2)!important}
+html:not([data-theme=light]) .mealio-fridge-v4 .fridge-hero,html:not([data-theme=light]) .mealio-fridge-v4>.card,html:not([data-theme=light]) .mealio-fridge-v4 .inp,html:not([data-theme=light]) .mealio-fridge-v4 .fgrid-beautiful>div,html:not([data-theme=light]) .mealio-fridge-v4 .fi-card{color:var(--tx)!important;background:var(--bg2)!important;border-color:color-mix(in srgb,var(--tx) 12%,transparent)!important}
+html:not([data-theme=light]) .mealio-fridge-v5 .fridge-hero,html:not([data-theme=light]) .mealio-fridge-v4 .sec-ti,html:not([data-theme=light]) .mealio-fridge-v4 .fi-card-nm{color:var(--tx)!important}
+html:not([data-theme=light]) .mealio-fridge-v4 .fi-card-qty,html:not([data-theme=light]) .mealio-fridge-v5 .fridge-title-v5 span{color:var(--tx2)!important}
+html:not([data-theme=light]) .mealio-fridge-v4 .fridge-hero [id$="Badge"]{color:var(--tx)!important;background:var(--bg3)!important}
+html[data-theme] #recipeDetailModal.recipe-editorial .btn.acc,html[data-theme] #recipeDetailOverlay .btn.acc,html[data-theme] .recipe-editorial .spoon-add-btn{color:#fff!important;background:var(--grad)!important;border-color:transparent!important}
 .profile-back-bar-v6{display:none;width:100%;min-height:46px;align-items:center;gap:9px;margin:-5px 0 13px;padding:9px 3px;color:var(--tx);background:transparent;border:0;border-bottom:1px solid var(--bd);font:inherit;font-size:.72rem;font-weight:800;text-align:left}.profile-back-bar-v6 svg{width:20px;flex:0 0 auto}.profile-detail-open-v6 .profile-back-bar-v6{display:flex!important}
 #menuPanelWeek>.menu-week-workspace-v4>#menuPlannerCardV6.open{display:flex!important}
 @media(min-width:700px){#vFrigo .rc-grid,#favsGrid .spoon-grid,#recipesGridAll .spoon-grid,#jowResults .spoon-grid,#menuPanelRecipes .spoon-grid,#menuPanelSearch .spoon-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
