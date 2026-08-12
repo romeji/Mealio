@@ -3135,6 +3135,9 @@ html[data-theme=light] #vAccueil>.vb,html[data-theme=light] #vFrigo>.vb,html[dat
 #menuVb>.menu-title-v5{padding-top:0!important;padding-bottom:4px!important}
 @media(max-width:767px){#vAccueil>.vb,#vListe>.vb,#vTicket>.vb{padding-top:16px!important}#vTicket>.vb>.lg-title{margin-bottom:4px!important}.mealio-home-v5 .lg-hello{margin-top:0!important}.mealio-home-v5>.lg-title{margin-bottom:14px!important}}
 @media(max-width:767px){html[data-theme] #app #vFrigo.view>.vb{padding-top:74px!important;scroll-padding-top:34px!important}}
+#menuPanelWeek .menu-day-actions-v6{display:grid!important;grid-template-columns:minmax(0,1fr) 42px 42px!important;align-items:stretch!important;gap:7px!important;width:100%!important}
+#menuPanelWeek .menu-day-actions-v6 .menu-missing-btn-v6{display:flex!important;min-width:0!important;min-height:42px!important;width:100%!important;padding:8px 10px!important;align-items:center!important;justify-content:center!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:center!important;font-size:.66rem!important;line-height:1.18!important}
+#menuPanelWeek .menu-day-actions-v6 .menu-icon-btn-v6{display:grid!important;width:42px!important;min-width:42px!important;height:42px!important;padding:0!important;place-items:center!important}
 #vFrigo .mealio-fridge-v5 .fridge-head-v5>.fridge-title-v5{display:flex!important}
 #vFrigo .mealio-fridge-v5 .fridge-head-v5>.fridge-stats-v5{display:grid!important}
 #vFrigo .mealio-fridge-v5>.card.mb14 .add-row>.btn{display:grid!important;width:38px!important;min-width:38px!important;height:38px!important;aspect-ratio:1!important;padding:0!important;place-items:center!important;border-radius:50%!important;overflow:hidden!important}
@@ -9384,10 +9387,10 @@ function renderDayDetail() {
     ${_renderDayNutri(nutri, menu)}
     ${menu.tip ? `<div style="font-size:.72rem;color:var(--ac);margin-top:8px;line-height:1.5;">💡 ${menu.tip}</div>` : ''}
 
-    <div style="display:flex;gap:7px;margin-top:12px;">
-      <button class="btn sm acc" style="flex:1;" onclick="addDayIngredients(${selectedDay})">🛒 Acheter les ingrédients manquants</button>
-      <button class="btn sm" style="flex:1;" onclick="openMenuHistoryModal()" title="Historique">📅</button>
-      <button class="btn sm" style="color:var(--rd);" onclick="clearDayMenu(${selectedDay})">🗑</button>
+    <div class="menu-day-actions-v6" style="margin-top:12px;">
+      <button class="btn sm acc menu-missing-btn-v6" onclick="addDayIngredients(${selectedDay})">🛒 Acheter les ingrédients manquants</button>
+      <button class="btn sm menu-icon-btn-v6" onclick="openMenuHistoryModal()" title="Historique">📅</button>
+      <button class="btn sm menu-icon-btn-v6" style="color:var(--rd);" onclick="clearDayMenu(${selectedDay})">🗑</button>
     </div>
   </div>`;
 }
