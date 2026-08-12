@@ -3126,6 +3126,13 @@ html[data-theme=light] .tb-logo-tx span{display:inline-block!important;padding-r
 @media(max-width:767px){#vFrigo>.vb,#vMenu>.vb{padding-top:74px!important;scroll-padding-top:34px!important}}
 @media(max-width:767px){html[data-theme=light] #app #vFrigo.view>.vb,html[data-theme=light] #app #vMenu.view>.vb,html[data-theme=jow] #app #vFrigo.view>.vb,html[data-theme=jow] #app #vMenu.view>.vb{padding-top:74px!important;scroll-padding-top:34px!important}}
 html[data-theme=light] #vAccueil>.vb,html[data-theme=light] #vFrigo>.vb,html[data-theme=jow] #vAccueil>.vb,html[data-theme=jow] #vFrigo>.vb,html:not([data-theme]) #vAccueil>.vb,html:not([data-theme]) #vFrigo>.vb{background:#fff7ea!important}
+/* En-têtes homogènes des modules principaux. La zone sûre de Frigo/Menu
+   reste à 74 px : seuls les espaces internes sont compactés. */
+#vListe>.vb>.lg-title,#vTicket>.vb>.lg-title,.fridge-title-v5 h1,#menuVb>.menu-title-v5 .lg-title{max-width:none!important;margin:0 0 14px!important;color:var(--tx)!important;font-family:var(--f)!important;font-size:2rem!important;font-weight:900!important;line-height:1.05!important;letter-spacing:-1px!important}
+.fridge-title-v5{margin-bottom:10px!important}
+.fridge-title-v5 h1,#menuVb>.menu-title-v5 .lg-title{margin-bottom:0!important}
+#menuVb>.menu-title-v5{padding-top:0!important;padding-bottom:4px!important}
+@media(max-width:767px){#vAccueil>.vb,#vListe>.vb,#vTicket>.vb{padding-top:16px!important}#vTicket>.vb>.lg-title{margin-bottom:4px!important}.mealio-home-v5 .lg-hello{margin-top:0!important}.mealio-home-v5>.lg-title{margin-bottom:14px!important}}
 #vFrigo .mealio-fridge-v5 .fridge-head-v5>.fridge-title-v5{display:flex!important}
 #vFrigo .mealio-fridge-v5 .fridge-head-v5>.fridge-stats-v5{display:grid!important}
 #vFrigo .mealio-fridge-v5>.card.mb14 .add-row>.btn{display:grid!important;width:38px!important;min-width:38px!important;height:38px!important;aspect-ratio:1!important;padding:0!important;place-items:center!important;border-radius:50%!important;overflow:hidden!important}
@@ -3377,8 +3384,7 @@ html:not([data-theme=light]) [style*="color:#171717"],html:not([data-theme=light
     <!-- VIEW: LISTE -->
     <div class="view" id="vListe">
       <div class="vb">
-        <div class="lg-hello" id="lgHello">Bonjour 👋</div>
-        <div class="lg-title">On s’occupe de quoi ?</div>
+        <div class="lg-title">Liste de courses</div>
         <div class="lg-sub" id="lgSub">0 article à acheter</div>
 
         <section class="home-hub" aria-labelledby="homeHubTitle">
@@ -3508,7 +3514,6 @@ html:not([data-theme=light]) [style*="color:#171717"],html:not([data-theme=light
     <!-- VIEW: SCAN -->
     <div class="view" id="vTicket">
       <div class="vb mealio-screen-v4 mealio-scan-v4">
-        <div class="mealio-page-kicker">AJOUT RAPIDE</div>
         <div class="lg-title">Scanner</div>
         <div class="lg-sub" style="margin-bottom:14px;">Ajoutez vos produits sans les saisir.</div>
 
@@ -3687,7 +3692,7 @@ html:not([data-theme=light]) [style*="color:#171717"],html:not([data-theme=light
 
         <!-- HEADER HERO -->
         <div class="fridge-head-v5">
-          <div class="fridge-title-v5"><div><span>MON STOCK</span><h1>Mon frigo</h1></div><button type="button" onclick="showProfile()" aria-label="Paramètres du frigo"><i data-lucide="settings-2"></i></button></div>
+          <div class="fridge-title-v5"><div><h1>Mon frigo</h1></div><button type="button" onclick="showProfile()" aria-label="Paramètres du frigo"><i data-lucide="settings-2"></i></button></div>
           <div class="fridge-stats-v5">
             <div><strong id="fridgeCountBadge">0</strong><span><b class="dot green"></b>Ingrédients</span></div>
             <div><strong id="fridgeUseSoonV5">0</strong><span><b class="dot amber"></b>À consommer</span></div>
@@ -5022,7 +5027,6 @@ async function startApp(user) {
   document.getElementById('profileAvBig').textContent = initials;
   document.getElementById('profileName').textContent = name;
   document.getElementById('profileEmail').textContent = user.email;
-  document.getElementById('lgHello').textContent = 'Bonjour, ' + name.split(' ')[0] + ' 👋';
 
   const budgetInp = document.getElementById('profileBudget');
   if(budgetInp) budgetInp.value = state.budget || 80;
